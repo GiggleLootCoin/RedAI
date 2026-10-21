@@ -37,10 +37,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete redai-v1 --repo "${{ github.repository }}" --yes || true
-          git fetch --tags
-          git tag -f redai-v1
-          git push origin refs/tags/redai-v1 --force
-          gh release create redai-v1 package/RedAI.zip \
+          gh release create redai-v1 release-package/RedAI.zip \\
             --repo "${{ github.repository }}" \
             --title "RedAI v1 — Verified GGUF" \
             --notes "Verified RedAI GGUF package. SHA-256 is included in the ZIP."
