@@ -14,17 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Download verified RedAI artifact from build run
+      - name: Download verified RedAI artifact
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p package
+          mkdir -p package release-package
           gh run download 39529101943 --repo "${{ github.repository }}" --name RedAI --dir package
           GGUF="$(find package -type f -name 'RedAI.gguf' | head -n 1)"
           SUM="$(find package -type f -name 'RedAI.gguf.sha256' | head -n 1)"
           test -s "$GGUF"
           test -s "$SUM"
-          mkdir -p release-package
           cp "$GGUF" release-package/RedAI.gguf
           cp "$SUM" release-package/RedAI.gguf.sha256
           cd release-package
@@ -37,7 +36,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete redai-v1 --repo "${{ github.repository }}" --yes || true
-          gh release create redai-v1 release-package/RedAI.zip \\
-            --repo "${{ github.repository }}" \
-            --title "RedAI v1 — Verified GGUF" \
-            --notes "Verified RedAI GGUF package. SHA-256 is included in the ZIP."
+          gh release create redai-v1 release-package/RedAI.zip --repo "${{ github.repository }}" --title "RedAI v1 — Verified GGUF" --notes "Verified RedAI GGUF package. SHA-256 is included in the ZIP."
