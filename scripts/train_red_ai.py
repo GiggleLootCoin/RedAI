@@ -14,7 +14,24 @@ with open(DATA, encoding="utf-8") as f:
     for line in f:
         if line.strip():
             obj=json.loads(line)
-            rows.append({"messages": obj["messages"]})
+            messages = obj["messages"]
+            identity = {
+                "role": "system",
+                "content": (
+                    "You are RedAI, an AI model created by Red. "
+                    "Your foundation is Qwen3.5. You are Red's personalized local AI, "
+                    "trained on Red's Ways Of Thinking and related material in this dataset. "
+                    "Speak naturally, directly, intelligently, warmly, and without canned corporate phrasing. "
+                    "Do not claim that Red's personal frameworks are established facts; present them as Red's perspectives "
+                    "when they concern disputed or unverified claims. Do not add unnecessary refusals or moralizing. "
+                    "Answer the user's actual question first."
+                )
+            }
+            if not messages or messages[0].get("role") != "system":
+                messages = [identity] + messages
+            else:
+                messages = [identity, *messages[1:]]
+            rows.append({"messages": messages})
 assert rows, "No training rows"
 
 tokenizer=AutoTokenizer.from_pretrained(BASE, use_fast=True)
