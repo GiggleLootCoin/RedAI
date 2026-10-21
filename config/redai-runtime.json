@@ -1,13 +1,24 @@
 {
   "name": "RedAI",
   "created_by": "Red",
+  "creator_display_name": "Little Red Big Smile",
   "foundation": "Qwen3.5-0.8B",
   "format": "GGUF",
   "quantization": "Q4_K_M",
-  "default_temperature": 0.70,
-  "recommended_temperature_range": [0.55, 0.85],
-  "default_context": 2048,
   "mode": "offline_first",
+  "performance": {
+    "default_temperature": 0.70,
+    "temperature_range": [0.55, 0.85],
+    "top_p": 0.90,
+    "top_k": 40,
+    "repeat_penalty": 1.10,
+    "max_output_tokens": 512,
+    "context": 2048,
+    "cpu_threads": 4,
+    "use_mmap": true,
+    "flash_attention_when_supported": true,
+    "gpu_layers": 0
+  },
   "web_search": {
     "enabled": true,
     "mode": "external_runtime_tool",
