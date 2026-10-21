@@ -20,10 +20,14 @@ jobs:
         run: |
           mkdir -p package
           gh run download 39529101943 --repo "${{ github.repository }}" --name RedAI --dir package
-          test -s package/RedAI.gguf
-          test -s package/RedAI.gguf.sha256
-          sha256sum -c package/RedAI.gguf.sha256
+          GGUF="$(find package -type f -name 'RedAI.gguf' | head -n 1)"
+          SUM="$(find package -type f -name 'RedAI.gguf.sha256' | head -n 1)"
+          test -s "$GGUF"
+          test -s "$SUM"
+          cp "$GGUF" package/RedAI.gguf
+          cp "$SUM" package/RedAI.gguf.sha256
           cd package
+          sha256sum -c RedAI.gguf.sha256
           zip -9 RedAI.zip RedAI.gguf RedAI.gguf.sha256
           ls -lh RedAI.zip
 
