@@ -1,4 +1,4 @@
-name: Build Red AI GGUF
+name: Build RedAI GGUF
 
 on:
   workflow_dispatch:
@@ -25,9 +25,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install --index-url https://download.pytorch.org/whl/cpu torch
-          pip install transformers datasets peft accelerate safetensors sentencepiece huggingface_hub
+          pip install -U transformers datasets peft accelerate safetensors sentencepiece huggingface_hub
 
-      - name: Train and merge Red AI
+      - name: Train and merge RedAI
         run: python scripts/train_red_ai.py
 
       - name: Build llama.cpp
@@ -42,17 +42,22 @@ jobs:
 
       - name: Quantize to Q4_K_M
         run: |
-          llama.cpp/build/bin/llama-quantize Red_AI_F16.gguf RedAI.gguf Q4_K_M
+          llama.cpp/build/bin/llama-quantize RedAI_F16.gguf RedAI.gguf Q4_K_M
 
-      - name: Verify GGUF
+      - name: Verify RedAI GGUF
         run: |
-          test -s Red_AI_Q4_K_M.gguf
-          ls -lh Red_AI_Q4_K_M.gguf
-          llama.cpp/build/bin/llama-cli -m Red_AI_Q4_K_M.gguf -p "How should you speak with Red?" -n 80 --no-display-prompt
+          test -s RedAI.gguf
+          ls -lh RedAI.gguf
+          llama.cpp/build/bin/llama-cli -m RedAI.gguf -p "Who are you, who created you, and how should you speak with Red?" -n 120 --temp 0.70 --no-display-prompt
 
-      - name: Upload final GGUF
+      - name: Write checksum
+        run: sha256sum RedAI.gguf > RedAI.gguf.sha256
+
+      - name: Upload final RedAI package
         uses: actions/upload-artifact@v4
         with:
           name: RedAI
-          path: Red_AI_Q4_K_M.gguf
+          path: |
+            RedAI.gguf
+            RedAI.gguf.sha256
           retention-days: 90
