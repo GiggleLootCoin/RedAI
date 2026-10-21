@@ -19,7 +19,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p package release-package
-          gh run download 39630904175 --repo "${{ github.repository }}" --name RedAI --dir package
+          RUN_ID="$(gh run list --repo "${{ github.repository }}" --workflow red-ai-build.yml --branch main --limit 20 --json databaseId,status,conclusion --jq '[.[] | select(.status=="completed" and .conclusion=="success")][0].databaseId')"
+          test -n "$RUN_ID"
+          echo "Using latest verified RedAI build run: $RUN_ID"
+          gh run download "$RUN_ID" --repo "${{ github.repository }}" --name RedAI --dir package
           GGUF="$(find package -type f -name 'RedAI.gguf' | head -n 1)"
           SUM="$(find package -type f -name 'RedAI.gguf.sha256' | head -n 1)"
           test -s "$GGUF"
@@ -38,4 +41,4 @@ jobs:
           if gh release view redai-latest --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release delete redai-latest --repo "${{ github.repository }}" --yes --cleanup-tag
           fi
-          gh release create redai-latest             --repo "${{ github.repository }}"             --target main             --title "RedAI — Latest GGUF"             --notes "Final verified RedAI Q4_K_M GGUF built from the completed RedAI training pipeline run 23. Includes RedAI.gguf and its SHA-256 checksum."             release-package/RedAI.zip
+          gh release create redai-latest             --repo "${{ github.repository }}"             --target main             --title "RedAI — Latest GGUF"             --notes "Final verified RedAI Q4_K_M GGUF built from the latest successful RedAI training pipeline run. Includes RedAI.gguf and its SHA-256 checksum."             release-package/RedAI.zip
