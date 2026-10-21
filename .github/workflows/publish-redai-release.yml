@@ -24,9 +24,10 @@ jobs:
           SUM="$(find package -type f -name 'RedAI.gguf.sha256' | head -n 1)"
           test -s "$GGUF"
           test -s "$SUM"
-          cp "$GGUF" package/RedAI.gguf
-          cp "$SUM" package/RedAI.gguf.sha256
-          cd package
+          mkdir -p release-package
+          cp "$GGUF" release-package/RedAI.gguf
+          cp "$SUM" release-package/RedAI.gguf.sha256
+          cd release-package
           sha256sum -c RedAI.gguf.sha256
           zip -9 RedAI.zip RedAI.gguf RedAI.gguf.sha256
           ls -lh RedAI.zip
