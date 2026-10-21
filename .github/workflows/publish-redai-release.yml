@@ -2,8 +2,9 @@ name: Publish RedAI GGUF release
 
 on:
   workflow_dispatch:
-  push:
-    branches: ["main"]
+  workflow_run:
+    workflows: ["Build RedAI GGUF"]
+    types: [completed]
 
 permissions:
   actions: read
@@ -11,6 +12,7 @@ permissions:
 
 jobs:
   package:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -19,9 +21,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p package release-package
-          RUN_ID="$(gh run list --repo "${{ github.repository }}" --workflow red-ai-build.yml --branch main --limit 20 --json databaseId,status,conclusion --jq '[.[] | select(.status=="completed" and .conclusion=="success")][0].databaseId')"
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID="$(gh run list --repo "${{ github.repository }}" --workflow red-ai-build.yml --branch main --limit 20 --json databaseId,status,conclusion --jq '[.[] | select(.status=="completed" and .conclusion=="success")][0].databaseId')"
+          fi
           test -n "$RUN_ID"
-          echo "Using latest verified RedAI build run: $RUN_ID"
+          echo "Using verified RedAI build run: $RUN_ID"
           gh run download "$RUN_ID" --repo "${{ github.repository }}" --name RedAI --dir package
           GGUF="$(find package -type f -name 'RedAI.gguf' | head -n 1)"
           SUM="$(find package -type f -name 'RedAI.gguf.sha256' | head -n 1)"
