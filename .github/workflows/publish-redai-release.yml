@@ -1,4 +1,4 @@
-name: Package verified RedAI for GitHub download
+name: Publish RedAI GGUF release
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
 
 permissions:
   actions: read
-  contents: read
+  contents: write
 
 jobs:
   package:
@@ -28,13 +28,14 @@ jobs:
           cp "$SUM" release-package/RedAI.gguf.sha256
           cd release-package
           sha256sum -c RedAI.gguf.sha256
-          zip -9 RedAI.zip RedAI.gguf RedAI.gguf.sha256
+          zip -9 -0 RedAI.zip RedAI.gguf RedAI.gguf.sha256
           ls -lh RedAI.zip
 
-      - name: Upload GitHub Actions download package
-        uses: actions/upload-artifact@v6
-        with:
-          name: RedAI-GGUF-Download
-          path: release-package/RedAI.zip
-          retention-days: 90
-          compression-level: 0
+      - name: Publish permanent GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view redai-latest --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release delete redai-latest --repo "${{ github.repository }}" --yes --cleanup-tag
+          fi
+          gh release create redai-latest             --repo "${{ github.repository }}"             --target main             --title "RedAI — Latest GGUF"             --notes "Verified RedAI Q4_K_M GGUF built from the current RedAI training pipeline. Includes RedAI.gguf and its SHA-256 checksum."             release-package/RedAI.zip
