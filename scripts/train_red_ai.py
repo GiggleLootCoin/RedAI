@@ -3,9 +3,9 @@ from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling
 from peft import LoraConfig, get_peft_model, TaskType
 
-BASE = "Qwen/Qwen2.5-0.5B-Instruct"
+BASE = "Qwen/Qwen3.5-0.8B"
 DATA = "data/red_ai_dataset.jsonl"
-OUT = "artifacts/red-ai-merged"
+OUT = "artifacts/RedAI"
 
 torch.set_num_threads(max(2, min(4, os.cpu_count() or 2)))
 
@@ -76,4 +76,4 @@ merged=PeftModel.from_pretrained(base, adapter_dir).merge_and_unload()
 os.makedirs(OUT, exist_ok=True)
 merged.save_pretrained(OUT, safe_serialization=True, max_shard_size="2GB")
 tokenizer.save_pretrained(OUT)
-print("MERGED_MODEL_READY", OUT)
+print("RED_AI_MODEL_READY", OUT)
