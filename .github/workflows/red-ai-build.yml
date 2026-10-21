@@ -1,0 +1,58 @@
+name: Build Red AI GGUF
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout RedAI
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install transformers datasets peft accelerate safetensors sentencepiece huggingface_hub
+
+      - name: Train and merge Red AI
+        run: python scripts/train_red_ai.py
+
+      - name: Build llama.cpp
+        run: |
+          git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
+          cmake -S llama.cpp -B llama.cpp/build -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build llama.cpp/build --config Release -j2 --target llama-quantize llama-cli
+
+      - name: Convert merged model to F16 GGUF
+        run: |
+          python llama.cpp/convert_hf_to_gguf.py artifacts/red-ai-merged --outfile Red_AI_F16.gguf --outtype f16
+
+      - name: Quantize to Q4_K_M
+        run: |
+          llama.cpp/build/bin/llama-quantize Red_AI_F16.gguf Red_AI_Q4_K_M.gguf Q4_K_M
+
+      - name: Verify GGUF
+        run: |
+          test -s Red_AI_Q4_K_M.gguf
+          ls -lh Red_AI_Q4_K_M.gguf
+          llama.cpp/build/bin/llama-cli -m Red_AI_Q4_K_M.gguf -p "How should you speak with Red?" -n 80 --no-display-prompt
+
+      - name: Upload final GGUF
+        uses: actions/upload-artifact@v4
+        with:
+          name: Red_AI_Q4_K_M
+          path: Red_AI_Q4_K_M.gguf
+          retention-days: 90
