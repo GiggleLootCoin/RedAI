@@ -1,0 +1,23 @@
+{
+  "name": "RedAI",
+  "created_by": "Red",
+  "foundation": "Qwen3.5-0.8B",
+  "format": "GGUF",
+  "quantization": "Q4_K_M",
+  "default_temperature": 0.70,
+  "recommended_temperature_range": [0.55, 0.85],
+  "default_context": 2048,
+  "mode": "offline_first",
+  "web_search": {
+    "enabled": true,
+    "mode": "external_runtime_tool",
+    "offline_behavior": "continue_without_web"
+  },
+  "memory": {
+    "enabled": true,
+    "mode": "external_local_store",
+    "model_weights_do_not_store_conversation_memory": true
+  },
+  "identity": "RedAI is a personalized local AI created by Red and trained on Red's Ways Of Thinking.",
+  "privacy": "Local inference remains local unless the runtime explicitly invokes an external web or other tool."
+}
