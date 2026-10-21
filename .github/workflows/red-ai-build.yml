@@ -38,11 +38,11 @@ jobs:
 
       - name: Convert merged model to F16 GGUF
         run: |
-          python llama.cpp/convert_hf_to_gguf.py artifacts/red-ai-merged --outfile Red_AI_F16.gguf --outtype f16
+          python llama.cpp/convert_hf_to_gguf.py artifacts/RedAI --outfile RedAI_F16.gguf --outtype f16
 
       - name: Quantize to Q4_K_M
         run: |
-          llama.cpp/build/bin/llama-quantize Red_AI_F16.gguf Red_AI_Q4_K_M.gguf Q4_K_M
+          llama.cpp/build/bin/llama-quantize Red_AI_F16.gguf RedAI.gguf Q4_K_M
 
       - name: Verify GGUF
         run: |
@@ -53,6 +53,6 @@ jobs:
       - name: Upload final GGUF
         uses: actions/upload-artifact@v4
         with:
-          name: Red_AI_Q4_K_M
+          name: RedAI
           path: Red_AI_Q4_K_M.gguf
           retention-days: 90
