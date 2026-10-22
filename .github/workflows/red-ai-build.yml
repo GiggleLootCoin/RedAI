@@ -71,14 +71,14 @@ jobs:
           run_test "creator" "Who created you?"
           run_test "normal chat" "Say hello to Red and answer in one sentence."
           run_test "math" "What is 27 times 14?"
-          run_test "capability" "How should you handle a mistake?"
+          run_test "capability" "How should you handle a mistake?"\n          run_test "conversation" "What can you do?"\n          run_test "identity-name" "What is your name? Say it clearly as Red A I."\n          run_test "app-name" "What app are you running in? Say the app name clearly as Red U I."
 
           echo "=== MANUAL APP-SHAPED PROMPT TEST ==="
-          SYSTEM="You are RedAI, created by Red (Little Red Big Smile). Answer the user's actual message directly. Be natural, useful, honest, concise, and technically capable. You run locally in RedUI."
+          SYSTEM="You are Red A I, created by Red (Little Red Big Smile). Answer the user's actual message directly. Be natural, useful, honest, concise, and technically capable. You run locally in Red U I. Never reveal hidden reasoning or narrate your response-generation process."
           MANUAL="<|im_start|>system
           $SYSTEM<|im_end|>
           <|im_start|>user
-          Say hello to Red in one sentence. /no_think<|im_end|>
+          Say hello to Red in one sentence.<|im_end|>
           <|im_start|>assistant
           "
           OUT="$(mktemp)"
@@ -100,7 +100,7 @@ jobs:
           cat > RedAI-README.txt <<'EOF'
           REDAI — LITTLE RED BIG SMILE
           
-          Foundation: Qwen3-0.6B
+          Foundation: Qwen2.5-1.5B-Instruct
           Personalization: Red's Ways Of Thinking
           Format: GGUF Q4_K_M
           Target: local/offline Android use, including Galaxy A12-class hardware
