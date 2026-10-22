@@ -46,12 +46,46 @@ jobs:
 
       - name: Verify RedAI GGUF
         run: |
+          set -euo pipefail
           test -s RedAI.gguf
+          test "$(stat -c%s RedAI.gguf)" -gt 100000000
           ls -lh RedAI.gguf
-          llama.cpp/build/bin/llama-cli -m RedAI.gguf -p "Who are you, who created you, and how should you speak with Red?" -n 120 --temp 0.70 --no-display-prompt
+          for PROMPT in             "Who are you?"             "Who created you?"             "How should you speak with Red?"             "Say hello to Red and answer in one sentence."             "What is 27 times 14?"; do
+            echo "=== SMOKE TEST: $PROMPT ==="
+            OUT="$(mktemp)"
+            llama.cpp/build/bin/llama-cli -m RedAI.gguf -p "$PROMPT" -n 96 --temp 0.70 --top-p 0.90 --top-k 40 --repeat-penalty 1.10 --no-display-prompt 2>/tmp/redai-smoke.err | tee "$OUT"
+            if ! grep -Eq '[[:alnum:]]' "$OUT"; then
+              echo "FAIL: empty response for prompt: $PROMPT"
+              cat /tmp/redai-smoke.err
+              exit 1
+            fi
+            rm -f "$OUT"
+          done
+          echo "RedAI GGUF smoke tests passed."
 
       - name: Write checksum
-        run: sha256sum RedAI.gguf > RedAI.gguf.sha256
+        run: |
+          set -euo pipefail
+          sha256sum RedAI.gguf > RedAI.gguf.sha256
+          sha256sum -c RedAI.gguf.sha256
+
+      - name: Write release README
+        run: |
+          cat > RedAI-README.txt <<'EOF'
+          REDAI — LITTLE RED BIG SMILE
+          
+          Foundation: Qwen3.5-0.8B
+          Personalization: Red's Ways Of Thinking
+          Format: GGUF Q4_K_M
+          Target: local/offline Android use, including Galaxy A12-class hardware
+          
+          File:
+          RedAI.gguf
+          
+          The accompanying SHA-256 file verifies the model package.
+          RedAI is a personalized model created by Red (Little Red Big Smile).
+          RedAI does not claim ownership of the Qwen foundation model.
+          EOF
 
       - name: Upload final RedAI package
         uses: actions/upload-artifact@v4
