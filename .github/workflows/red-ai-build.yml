@@ -64,6 +64,11 @@ jobs:
               cat "$ERR"
               exit 1
             fi
+            if grep -Eiq "the user asked|i need to respond|let me craft|time to draft|okay, the user|as an ai, i should" "$OUT"; then
+              echo "FAIL: leaked response-planning text for $NAME"
+              cat "$OUT"
+              exit 1
+            fi
             rm -f "$OUT" "$ERR"
           }
 
