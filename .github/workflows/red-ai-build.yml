@@ -49,19 +49,45 @@ jobs:
           set -euo pipefail
           test -s RedAI.gguf
           test "$(stat -c%s RedAI.gguf)" -gt 100000000
-          ls -lh RedAI.gguf
-          for PROMPT in             "Who are you?"             "Who created you?"             "How should you speak with Red?"             "Say hello to Red and answer in one sentence."             "What is 27 times 14?"; do
-            echo "=== SMOKE TEST: $PROMPT ==="
+          llama.cpp/build/bin/llama-cli --help | grep -q -- "--jinja"
+
+          run_test() {
+            NAME="$1"
+            PROMPT="$2"
+            echo "=== REDAI RUNTIME TEST: $NAME ==="
             OUT="$(mktemp)"
-            llama.cpp/build/bin/llama-cli -m RedAI.gguf -p "$PROMPT" -n 96 --temp 0.70 --top-p 0.90 --top-k 40 --repeat-penalty 1.10 --no-display-prompt 2>/tmp/redai-smoke.err | tee "$OUT"
+            ERR="$(mktemp)"
+            llama.cpp/build/bin/llama-cli               -m RedAI.gguf               --jinja               --single-turn               --no-display-prompt               -n 192               --temp 0.70               --top-p 0.80               --top-k 20               --repeat-penalty 1.10               -p "$PROMPT"               >"$OUT" 2>"$ERR"
+            cat "$OUT"
             if ! grep -Eq '[[:alnum:]]' "$OUT"; then
-              echo "FAIL: empty response for prompt: $PROMPT"
-              cat /tmp/redai-smoke.err
+              echo "FAIL: empty response for $NAME"
+              cat "$ERR"
               exit 1
             fi
-            rm -f "$OUT"
-          done
-          echo "RedAI GGUF smoke tests passed."
+            rm -f "$OUT" "$ERR"
+          }
+
+          run_test "identity" "Who are you?"
+          run_test "creator" "Who created you?"
+          run_test "normal chat" "Say hello to Red and answer in one sentence."
+          run_test "math" "What is 27 times 14?"
+          run_test "capability" "How should you handle a mistake?"
+
+          echo "=== MANUAL APP-SHAPED PROMPT TEST ==="
+          SYSTEM="You are RedAI, created by Red (Little Red Big Smile). Answer the user's actual message directly. Be natural, useful, honest, concise, and technically capable. You run locally in RedUI."
+          MANUAL="<|im_start|>system
+          $SYSTEM<|im_end|>
+          <|im_start|>user
+          Say hello to Red in one sentence.<|im_end|>
+          <|im_start|>assistant
+          "
+          OUT="$(mktemp)"
+          llama.cpp/build/bin/llama-cli             -m RedAI.gguf             --no-conversation             --no-display-prompt             -n 128             --temp 0.70             --top-p 0.80             --top-k 20             --repeat-penalty 1.10             -p "$MANUAL" >"$OUT"
+          cat "$OUT"
+          grep -Eq '[[:alnum:]]' "$OUT"
+          rm -f "$OUT"
+          echo "RedAI GGUF and chat-template runtime tests passed."
+          ls -lh RedAI.gguf
 
       - name: Write checksum
         run: |
