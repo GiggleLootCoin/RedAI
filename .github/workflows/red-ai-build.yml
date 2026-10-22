@@ -82,7 +82,7 @@ jobs:
           <|im_start|>assistant
           "
           OUT="$(mktemp)"
-          llama.cpp/build/bin/llama-cli             -m RedAI.gguf             --no-conversation             --no-display-prompt             -n 128             --temp 0.70             --top-p 0.80             --top-k 20             --repeat-penalty 1.10             -p "$MANUAL" >"$OUT"
+          llama.cpp/build/bin/llama-cli             -m RedAI.gguf             --no-display-prompt             -n 128             --temp 0.70             --top-p 0.80             --top-k 20             --repeat-penalty 1.10             -p "$MANUAL" >"$OUT"
           cat "$OUT"
           grep -Eq '[[:alnum:]]' "$OUT"
           rm -f "$OUT"
