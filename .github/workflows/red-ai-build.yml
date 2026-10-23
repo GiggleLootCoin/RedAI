@@ -53,7 +53,7 @@ jobs:
 
           run_test() {
             NAME="$1"
-            PROMPT="$2"
+            PROMPT="$2 /no_think"
             echo "=== REDAI RUNTIME TEST: $NAME ==="
             OUT="$(mktemp)"
             ERR="$(mktemp)"
@@ -87,7 +87,7 @@ jobs:
           MANUAL="<|im_start|>system
           $SYSTEM<|im_end|>
           <|im_start|>user
-          Say hello to Red in one sentence.<|im_end|>
+          Say hello to Red in one sentence. /no_think<|im_end|>
           <|im_start|>assistant
           "
           OUT="$(mktemp)"
