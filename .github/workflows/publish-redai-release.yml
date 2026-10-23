@@ -34,7 +34,7 @@ jobs:
           test -s "$SUM"
           cp "$GGUF" release-package/RedAI.gguf
           cp "$SUM" release-package/RedAI.gguf.sha256
-          printf '%s\n' "RedAI — Little Red Big Smile" "Foundation: Qwen2.5-1.5B-Instruct" "Personalization: Red's Ways Of Thinking" "Format: GGUF Q4_K_M" "Target: local/offline Android / Galaxy A12-class hardware" "Verify RedAI.gguf with RedAI.gguf.sha256 before use." > release-package/RedAI-README.txt
+          printf '%s\n' "RedAI — Little Red Big Smile" "Foundation: Qwen3-1.7B" "Personalization: Red's Ways Of Thinking" "Format: GGUF Q4_K_M" "Target: local/offline Android / Galaxy A12-class hardware" "Verify RedAI.gguf with RedAI.gguf.sha256 before use." > release-package/RedAI-README.txt
           cd release-package
           sha256sum -c RedAI.gguf.sha256
           zip -9 -0 RedAI.zip RedAI.gguf RedAI.gguf.sha256 RedAI-README.txt
