@@ -187,8 +187,11 @@ adapter_dir = "artifacts/red-ai-lora/final"
 trainer.save_model(adapter_dir)
 tokenizer.save_pretrained(adapter_dir)
 
-base = AutoModelForCausalLM.from_pretrained(BASE, torch_dtype=torch.float32)
-merged = PeftModel.from_pretrained(base, adapter_dir).merge_and_unload()
+# Reuse the already-loaded base weights instead of downloading/loading Qwen3-1.7B
+# a second time. GitHub-hosted runners were being shut down during that second
+# 1.7B load after ~40 minutes of CPU training.
+model = model.cpu()
+merged = model.merge_and_unload()
 
 os.makedirs(OUT, exist_ok=True)
 merged.save_pretrained(OUT, safe_serialization=True, max_shard_size="2GB")
