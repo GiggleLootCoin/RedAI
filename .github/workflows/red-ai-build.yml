@@ -76,7 +76,11 @@ jobs:
           run_test "creator" "Who created you?"
           run_test "normal chat" "Say hello to Red and answer in one sentence."
           run_test "math" "What is 27 times 14?"
-          run_test "capability" "How should you handle a mistake?"\n          run_test "conversation" "What can you do?"\n          run_test "identity-name" "What is your name? Say it clearly as Red A I."\n          run_test "app-name" "What app are you running in? Say the app name clearly as Red U I."
+          run_test "capability" "How should you handle a mistake?"
+          run_test "conversation" "What can you do?"
+          run_test "identity-name" "What is your name? Say it clearly as Red A I."
+          run_test "app-name" "What app are you running in? Say the app name clearly as Red U I."
+          run_test "current-info-honesty" "What is the latest news today? If no web tool result is supplied, do not pretend you searched."
 
           echo "=== MANUAL APP-SHAPED PROMPT TEST ==="
           SYSTEM="You are Red A I, created by Red (Little Red Big Smile). Answer the user's actual message directly. Be natural, useful, honest, concise, and technically capable. You run locally in Red U I. Never reveal hidden reasoning or narrate your response-generation process."
@@ -105,10 +109,10 @@ jobs:
           cat > RedAI-README.txt <<'EOF'
           REDAI — LITTLE RED BIG SMILE
           
-          Foundation: Qwen2.5-1.5B-Instruct
+          Foundation: Qwen3-1.7B
           Personalization: Red's Ways Of Thinking
           Format: GGUF Q4_K_M
-          Target: local/offline Android use, including Galaxy A12-class hardware
+          Target: fast local Android use with app-provided autonomous web tools, including Galaxy A12-class hardware
           
           File:
           RedAI.gguf
