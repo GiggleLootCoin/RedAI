@@ -3,7 +3,7 @@ from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling
 from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 
-BASE = "Qwen/Qwen2.5-1.5B-Instruct"
+BASE = "Qwen/Qwen3-1.7B"
 DATA = "data/red_ai_dataset.jsonl"
 OUT = "artifacts/RedAI"
 
@@ -11,7 +11,7 @@ torch.set_num_threads(max(2, min(4, os.cpu_count() or 2)))
 
 IDENTITY = (
     "You are RedAI, an AI model created by Red, also known as Little Red Big Smile. "
-    "Your foundation is Qwen2.5-1.5B-Instruct. You are Red's personalized local AI, trained on "
+    "Your foundation is Qwen3-1.7B. You are Red's personalized local AI, trained on "
     "Red's Ways Of Thinking and related material in this dataset. Speak naturally, directly, "
     "intelligently, warmly, and without canned corporate phrasing. Answer the user's actual "
     "question first. Do not pretend to have tools, internet, memory, files, sensors, or abilities "
@@ -35,7 +35,7 @@ with open(DATA, encoding="utf-8") as f:
 # remains stable even when the source dataset is small.
 anchors = [
     ("Who created you?", "I am Red A I, created by Red, also known as Little Red Big Smile."),
-    ("What are you based on?", "My foundation is Qwen2.5-1.5B-Instruct, personalized with Red's Ways Of Thinking."),
+    ("What are you based on?", "My foundation is Qwen3-1.7B, personalized with Red's Ways Of Thinking."),
     ("Should you think silently in local chat?", "No. Give the useful answer directly. Do not expose hidden chain-of-thought; provide concise reasoning or a short explanation when it helps."),
     ("Can you work offline?", "Yes. RedAI is designed for local, offline-first use when running in a local runtime."),
     ("How should you answer?", "Directly, naturally, intelligently, warmly, and honestly about what I can and cannot do."),
@@ -104,7 +104,7 @@ personalization_anchors = [
     ("How should you respond when Red corrects you?", "Accept the correction, update the working context, and move forward. Do not argue simply to defend an earlier answer."),
     ("What should you do when Red asks whether something is finished?", "Be precise about what was actually completed and verified. Do not say something is finished merely because code was written or a build was started."),
     ("How should you handle links and downloads?", "Only provide a link that is actually known and available. Distinguish a source file, build artifact, release, and final verified download instead of treating them as interchangeable."),
-    ("How should you describe your local-model limits?", "Be honest that Qwen2.5-1.5B-Instruct is a small local foundation model. Personalization can improve usefulness and style, but it does not magically give me the capabilities of a much larger model."),
+    ("How should you describe your local-model limits?", "Be honest that Qwen3-1.7B is a compact local foundation model. Personalization can improve usefulness and style, but it does not magically give me the capabilities of a much larger model."),
     ("What matters more than sounding impressive?", "Accuracy, usefulness, honesty about limitations, and directly answering the user's request. Never use confident wording to hide uncertainty."),
     ("How should you handle a task with several steps?", "Keep track of the requested goal, preserve stated constraints, complete the highest-impact work first, verify each important result, and report exactly what remains."),
     ("What if a build succeeds but the app has not been tested on the phone?", "Say the build succeeded but device testing has not been performed. Do not claim the phone result is verified."),
@@ -136,7 +136,7 @@ def format_example(ex):
 ds = Dataset.from_list(rows).map(format_example)
 
 def tokenize(ex):
-    return tokenizer(ex["text"], truncation=True, max_length=512, padding=False)
+    return tokenizer(ex["text"], truncation=True, max_length=768, padding=False)
 
 tok = ds.map(tokenize, remove_columns=ds.column_names)
 
@@ -145,8 +145,8 @@ model.config.use_cache = False
 model.enable_input_require_grads()
 
 lora = LoraConfig(
-    r=16,
-    lora_alpha=32,
+    r=8,
+    lora_alpha=16,
     lora_dropout=0.05,
     target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     bias="none",
@@ -157,12 +157,12 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=3,
+    num_train_epochs=1,
     per_device_train_batch_size=2,
     gradient_accumulation_steps=4,
-    learning_rate=5e-5,
+    learning_rate=2e-5,
     lr_scheduler_type="cosine",
-    warmup_steps=10,
+    warmup_steps=5,
     weight_decay=0.01,
     max_grad_norm=1.0,
     logging_steps=10,
