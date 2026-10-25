@@ -95,10 +95,10 @@ if tokenizer.pad_token is None:
 def prepare_example(ex):
     messages = ex["messages"]
     prompt = tokenizer.apply_chat_template(
-        messages[:-1], tokenize=True, add_generation_prompt=True
+        messages[:-1], tokenize=True, add_generation_prompt=True, enable_thinking=False
     )
     full = tokenizer.apply_chat_template(
-        messages, tokenize=True, add_generation_prompt=False
+        messages, tokenize=True, add_generation_prompt=False, enable_thinking=False
     )
     if isinstance(prompt, dict):
         prompt = prompt["input_ids"]
