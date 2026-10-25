@@ -57,7 +57,7 @@ jobs:
             echo "=== REDAI RUNTIME TEST: $NAME ==="
             OUT="$(mktemp)"
             ERR="$(mktemp)"
-            llama.cpp/build/bin/llama-cli               -m RedAI.gguf               --jinja               --single-turn               --no-display-prompt               -n 192               --temp 0.70               --top-p 0.80               --top-k 20               --repeat-penalty 1.10               -p "$PROMPT"               >"$OUT" 2>"$ERR"
+            llama.cpp/build/bin/llama-cli               -m RedAI.gguf               --jinja               --single-turn               --no-display-prompt               -n 192               --temp 0.70               --top-p 0.80               --top-k 20               --repeat-penalty 1.10 --presence-penalty 1.50               -p "$PROMPT"               >"$OUT" 2>"$ERR"
             cat "$OUT"
             if ! grep -Eq '[[:alnum:]]' "$OUT"; then
               echo "FAIL: empty response for $NAME"
@@ -91,7 +91,7 @@ jobs:
           <|im_start|>assistant
           "
           OUT="$(mktemp)"
-          llama.cpp/build/bin/llama-cli             -m RedAI.gguf             --jinja             --no-display-prompt             -n 128             --temp 0.70             --top-p 0.80             --top-k 20             --repeat-penalty 1.10             -p "$MANUAL" >"$OUT"
+          llama.cpp/build/bin/llama-cli             -m RedAI.gguf             --jinja             --no-display-prompt             -n 128             --temp 0.70             --top-p 0.80             --top-k 20             --repeat-penalty 1.10 --presence-penalty 1.50             -p "$MANUAL" >"$OUT"
           cat "$OUT"
           grep -Eq '[[:alnum:]]' "$OUT"
           rm -f "$OUT"
@@ -110,6 +110,7 @@ jobs:
           REDAI — LITTLE RED BIG SMILE
           
           Foundation: Qwen3-1.7B
+          Training: assistant-completion-only LoRA fine-tune
           Personalization: Red's Ways Of Thinking
           Format: GGUF Q4_K_M
           Target: fast local Android use with app-provided autonomous web tools, including Galaxy A12-class hardware
