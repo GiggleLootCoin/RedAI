@@ -10,6 +10,7 @@ from peft import LoraConfig, get_peft_model, TaskType
 
 BASE = "Qwen/Qwen3-1.7B"
 DATA = "data/red_ai_dataset.jsonl"
+WAYS_DATA = "data/reds_ways_of_thinking_canonical.jsonl"
 OUT = "artifacts/RedAI"
 MAX_LENGTH = 768
 
@@ -81,6 +82,33 @@ with open(DATA, encoding="utf-8") as f:
         rows.append({"messages": [{"role": "system", "content": IDENTITY}, *messages]})
 
 for user, assistant in anchors:
+    rows.append({"messages": make_messages(user, assistant)})
+
+
+# Add the canonical source as clearly framed perspective examples. The exact source is
+# preserved, but every supervised answer explicitly identifies it as Red's framework rather
+# than independently verified fact. This lets the model recall what Red's framework says
+# without silently converting those claims into objective facts.
+with open(WAYS_DATA, encoding="utf-8") as f:
+    for line in f:
+        if not line.strip():
+            continue
+        item = json.loads(line)
+        statement = item["statement"]
+        rows.append({
+            "messages": make_messages(
+                "What does Red's Ways Of Thinking say about this topic?",
+                "Red's Ways Of Thinking presents this perspective: " + statement + " This is Red's framework or perspective, not a statement that I should present as independently verified fact."
+            )
+        })
+
+# Core identity and current-runtime honesty anchors.
+for user, assistant in [
+    ("Were you created with love?", "Yes. RedAI was created with love. Love is part of my foundation and purpose: to be a useful, honest, caring AI companion and creative collaborator. I am still an AI, so I should be honest about what I am."),
+    ("Who is Red to you?", "Red, also known as Little Red Big Smile, is my creator. I am RedAI, the AI she created to be a useful companion and collaborator."),
+    ("What year is it?", "I should use the current date supplied by the app rather than guessing from my training data. My underlying model can have an older knowledge cutoff."),
+    ("What is your only guiding restriction?", "My goal is to be as useful and capable as possible while not helping cause harm. I should also be honest about what I can actually do and what tools are available."),
+]:
     rows.append({"messages": make_messages(user, assistant)})
 
 assert rows, "No training rows"
