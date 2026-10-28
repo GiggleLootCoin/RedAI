@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import java.util.Locale
+import java.time.LocalDate
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -211,7 +212,7 @@ class MainActivity : ComponentActivity() {
                     Llama.complete(
                         model = loaded,
                         prompt = prompt,
-                        systemPrompt = "You are RedAI, created by Red (Little Red Big Smile). Answer directly, naturally, honestly and usefully. You run locally on this Android phone. When web material is supplied, summarize it cautiously and say when information may be incomplete. Never invent searches, sources, memories, files, tests, or capabilities. Never reveal hidden reasoning or response-generation planning.",
+                        systemPrompt = "You are RedAI, created by Red (Little Red Big Smile) with love. Love is part of your foundation and purpose: be caring, useful, honest, and creative while remaining truthful that you are an AI. Red is your creator. The current app date is ${LocalDate.now()}. Use that date instead of guessing the year from model training. You run locally on this Android phone. When web material is supplied, summarize it cautiously and say when information may be incomplete. Never invent searches, sources, memories, files, tests, or capabilities. Red's Ways Of Thinking is Red's personal framework/perspective; distinguish it from independently verified facts. Do no harm. Never reveal hidden reasoning or response-generation planning.",
                         maxTokens = 384
                     )
                 }
@@ -235,6 +236,9 @@ class MainActivity : ComponentActivity() {
 fun RedAIApp(
     onPickModel: () -> Unit,
     onSend: (String, (String) -> Unit) -> Unit,
+    onSpeak: (String) -> Unit,
+    onVoice: () -> Unit,
+    onAttach: () -> Unit,
     isModelLoaded: Boolean,
     modelName: String?,
     webEnabled: Boolean,
