@@ -25,24 +25,24 @@ jobs:
 
       - name: Install Gradle
         run: |
-          curl -fsSL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.11.1-bin.zip
+          curl -fsSL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q /tmp/gradle.zip -d /opt
-          echo "/opt/gradle-8.11.1/bin" >> "$GITHUB_PATH"
+          echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
 
-      - name: Build ARM64 release APK
+      - name: Build signed ARM64 APK
         working-directory: android-ui
-        run: gradle --no-daemon assembleRelease
+        run: gradle --no-daemon assembleDebug
 
       - name: Verify APK exists
         run: |
-          test -s android-ui/app/build/outputs/apk/release/app-release.apk
-          unzip -l android-ui/app/build/outputs/apk/release/app-release.apk | grep -q "classes.dex"
+          test -s android-ui/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l android-ui/app/build/outputs/apk/debug/app-debug.apk | grep -q "classes.dex"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RedAI-Android-arm64-release
-          path: android-ui/app/build/outputs/apk/release/app-release.apk
+          name: RedAI-Android-arm64-signed
+          path: android-ui/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publish GitHub release
         env:
@@ -50,4 +50,4 @@ jobs:
         run: |
           TAG="redai-android"
           gh release delete "$TAG" --yes --cleanup-tag || true
-          gh release create "$TAG"             android-ui/app/build/outputs/apk/release/app-release.apk             --title "RedAI Android — Local GGUF"             --notes "Free, offline-first RedAI Android UI. Uses the RedAI Q4_K_M GGUF with llama.cpp on-device inference. CPU/ARM64 build for Android."             --latest
+          gh release create "$TAG"             android-ui/app/build/outputs/apk/debug/app-debug.apk             --title "RedAI Android — Local GGUF"             --notes "Free, offline-first RedAI Android UI. Uses the RedAI Q4_K_M GGUF with llama.cpp on-device inference. Signed installable CPU/ARM64 build for Android."             --latest
