@@ -11,6 +11,9 @@ import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
 import android.os.Bundle
+import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -40,11 +43,13 @@ class MainActivity : ComponentActivity() {
     private var model: LlamaModel? = null
     private var modelFile: File? = null
     private var webEnabled = true
+    private var tts: TextToSpeech? = null
     private val prefs by lazy { getSharedPreferences("redai", Context.MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         webEnabled = prefs.getBoolean("web_enabled", true)
+        tts = TextToSpeech(this) { if (it == TextToSpeech.SUCCESS) tts?.language = Locale.US }
         render("RedAI is ready.")
         lifecycleScope.launch { autoLoadSavedModel() }
     }
@@ -54,6 +59,9 @@ class MainActivity : ComponentActivity() {
             RedAIApp(
                 onPickModel = { launchModelPicker() },
                 onSend = { text, callback -> generate(text, callback) },
+                onSpeak = { text -> tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "redai") },
+                onVoice = { startVoiceInput() },
+                onAttach = { launchFilePicker() },
                 isModelLoaded = model?.isLoaded == true,
                 modelName = modelFile?.name,
                 webEnabled = webEnabled,
@@ -65,6 +73,25 @@ class MainActivity : ComponentActivity() {
                 }
             )
         }
+    }
+
+    private fun launchFilePicker() {
+        startActivityForResult(
+            Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                type = "*/*"
+                addCategory(Intent.CATEGORY_OPENABLE)
+            },
+            9002
+        )
+    }
+
+    private fun startVoiceInput() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Talk to RedAI")
+        }
+        runCatching { startActivityForResult(intent, 9003) }
+            .onFailure { render("Voice input is unavailable on this phone.") }
     }
 
     private fun launchModelPicker() {
@@ -80,6 +107,20 @@ class MainActivity : ComponentActivity() {
     @Deprecated("Compatibility with Android 12")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 9003 && resultCode == RESULT_OK) {
+            val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spoken.isNullOrBlank()) generate(spoken) { answer -> tts?.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "redai") }
+            return
+        }
+        if (requestCode == 9002 && resultCode == RESULT_OK) {
+            val uri = data?.data ?: return
+            lifecycleScope.launch {
+                val name = uri.lastPathSegment ?: "file"
+                val text = withContext(Dispatchers.IO) { runCatching { contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText().take(20000) }.orEmpty() }.getOrDefault("") }
+                generate("The user attached a file named " + name + ". Analyze this file content and help the user. FILE CONTENT:\n" + text) { answer -> render(answer) }
+            }
+            return
+        }
         if (requestCode != 9001 || resultCode != RESULT_OK) return
         val uri = data?.data ?: return
         render("Loading RedAI.gguf locally…")
@@ -182,6 +223,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        tts?.stop()
+        tts?.shutdown()
         model?.let { runCatching { Llama.releaseModel(it) } }
         model = null
         super.onDestroy()
@@ -218,12 +261,7 @@ fun RedAIApp(
                 TextButton(onClick = { showSettings = !showSettings }) { Text(if (showSettings) "Close" else "Settings") }
             }
 
-            if (status != null) {
-                Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(14.dp)) {
-                    Text(status, Modifier.padding(14.dp), style = MaterialTheme.typography.bodySmall)
-                }
-                Spacer(Modifier.height(8.dp))
-            }
+            // No timing/performance panel: runtime details stay in Settings.
 
             if (!isModelLoaded) {
                 Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(18.dp)) {
@@ -278,10 +316,18 @@ fun RedAIApp(
                             shape = RoundedCornerShape(18.dp),
                             color = if (message.role == "user") Color(0xFFE5E5E7) else Color.White
                         ) {
-                            Text(message.text, Modifier.padding(13.dp).widthIn(max = 320.dp))
+                            Column(Modifier.padding(13.dp).widthIn(max = 320.dp)) {
+                                Text(message.text)
+                                if (message.role == "assistant") TextButton(onClick = { onSpeak(message.text) }) { Text("Speak") }
+                            }
                         }
                     }
                 }
+            }
+
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedButton(onClick = onAttach) { Text("File") }
+                OutlinedButton(onClick = onVoice) { Text("Voice") }
             }
 
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.Bottom) {
