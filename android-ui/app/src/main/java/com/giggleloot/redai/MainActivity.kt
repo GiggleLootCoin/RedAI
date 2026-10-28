@@ -247,69 +247,182 @@ fun RedAIApp(
 ) {
     var input by remember { mutableStateOf("") }
     var messages by remember {
-        mutableStateOf(listOf(Message("assistant", "RedAI is ready. Choose the RedAI.gguf model to start private, on-device chat.")))
+        mutableStateOf(listOf(Message("assistant", "RedAI is ready. Load the RedAI Q4_K_M GGUF to begin private on-device chat.")))
     }
     var showSettings by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
 
-    MaterialTheme {
-        Column(Modifier.fillMaxSize().background(Color(0xFFF7F7F8))) {
-            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    val black = Color(0xFF050505)
+    val panel = Color(0xFF0D0D0F)
+    val panel2 = Color(0xFF151519)
+    val red = Color(0xFFE50914)
+    val redBright = Color(0xFFFF2430)
+    val white = Color(0xFFF7F7F7)
+    val muted = Color(0xFFA7A7AE)
+    val outline = Color(0xFF2A2A30)
+
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = red,
+            onPrimary = Color.White,
+            secondary = redBright,
+            background = black,
+            surface = panel,
+            surfaceVariant = panel2,
+            onBackground = white,
+            onSurface = white,
+            onSurfaceVariant = muted,
+            outline = outline
+        )
+    ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(black)
+        ) {
+            // Premium RedAI header: deliberately no timing/performance strip.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(panel)
+                    .padding(start = 18.dp, top = 16.dp, end = 10.dp, bottom = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = red.copy(alpha = 0.14f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, red.copy(alpha = 0.55f))
+                ) {
+                    Box(
+                        Modifier.size(48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("R", color = redBright, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("RedAI", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("RED AI", color = white, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineSmall)
                     Text(
-                        if (isModelLoaded) "PRIVATE AI • " + (modelName ?: "GGUF") else "PRIVATE • OFFLINE-FIRST AI",
-                        style = MaterialTheme.typography.bodySmall
+                        if (isModelLoaded) "PRIVATE • LOCAL • READY" else "PRIVATE • OFFLINE-FIRST",
+                        color = if (isModelLoaded) redBright else muted,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-                TextButton(onClick = { showSettings = !showSettings }) { Text(if (showSettings) "Close" else "Settings") }
+                IconButton(onClick = { showSettings = !showSettings }) {
+                    Text(if (showSettings) "×" else "⋮", color = white, style = MaterialTheme.typography.headlineSmall)
+                }
             }
 
-            // No timing/performance panel: runtime details stay in Settings.
-
             if (!isModelLoaded) {
-                Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(18.dp)) {
-                    Column(Modifier.padding(18.dp)) {
-                        Text("RedAI GGUF", fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(6.dp))
-                        Text("Load the smarter RedAI Q4_K_M model. Inference stays on the phone; no paid API or cloud service is required.")
-                        Spacer(Modifier.height(12.dp))
-                        Button(onClick = onPickModel, modifier = Modifier.fillMaxWidth()) {
-                            Text("Choose RedAI.gguf")
+                Card(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = panel),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, red.copy(alpha = 0.38f))
+                ) {
+                    Column(Modifier.padding(20.dp)) {
+                        Text("RED AI", color = redBright, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Your private AI, built to run locally.", color = white, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Load the smarter RedAI Q4_K_M GGUF. No paid API is required for local inference.",
+                            color = muted
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = onPickModel,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            shape = RoundedCornerShape(15.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = red)
+                        ) {
+                            Text("LOAD REDAI GGUF", fontWeight = FontWeight.Black)
                         }
                     }
                 }
             } else {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(onClick = onPickModel, label = { Text("Change model") })
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = onPickModel,
+                        label = { Text("Change model", color = white) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = panel2,
+                            labelColor = white
+                        )
+                    )
                     AssistChip(
                         onClick = { messages = listOf(Message("assistant", "New chat started.")) },
-                        label = { Text("New chat") }
+                        label = { Text("New chat", color = white) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = panel2,
+                            labelColor = white
+                        )
                     )
-                }
-            }
-
-            if (showSettings) {
-                Card(Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(18.dp)) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Galaxy A12 preset", fontWeight = FontWeight.Bold)
-                        Text("Qwen3-1.7B • Q4_K_M • 2048 context • 4 CPU threads")
-                        Text("Temperature 0.70 • Top-p 0.80 • Top-k 20", style = MaterialTheme.typography.bodySmall)
-                        Text("Qwen3 non-thinking mode • optimized for Galaxy A12.", style = MaterialTheme.typography.bodySmall)
-                        Spacer(Modifier.height(10.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Live web grounding", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
-                            Switch(checked = webEnabled, onCheckedChange = onWebChanged)
-                        }
-                        Text("When connected, RedAI can fetch temporary web material. The model still runs locally.", style = MaterialTheme.typography.bodySmall)
+                    if (webEnabled) {
+                        AssistChip(
+                            onClick = { },
+                            label = { Text("WEB ON", color = redBright) },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = red.copy(alpha = 0.12f),
+                                labelColor = redBright
+                            )
+                        )
                     }
                 }
             }
 
+            if (showSettings) {
+                Card(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = panel),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, outline)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("RED AI SETTINGS", color = redBright, fontWeight = FontWeight.Black)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Qwen3-1.7B • Q4_K_M • 2048 context • 4 CPU threads", color = white)
+                        Text("Temperature 0.70 • Top-p 0.80 • Top-k 20", color = muted, style = MaterialTheme.typography.bodySmall)
+                        Text("Qwen3 non-thinking mode • tuned for Galaxy A12.", color = muted, style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(10.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Live web grounding", color = white, fontWeight = FontWeight.SemiBold)
+                                Text("Optional. Local model remains the core.", color = muted, style = MaterialTheme.typography.bodySmall)
+                            }
+                            Switch(
+                                checked = webEnabled,
+                                onCheckedChange = onWebChanged,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = red,
+                                    uncheckedThumbColor = muted,
+                                    uncheckedTrackColor = panel2
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (!status.isNullOrBlank()) {
+                Text(
+                    status,
+                    Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp),
+                    color = muted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             LazyColumn(
-                Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
+                Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
+                contentPadding = PaddingValues(top = 10.dp, bottom = 10.dp)
             ) {
                 items(messages) { message ->
                     Row(
@@ -317,31 +430,79 @@ fun RedAIApp(
                         horizontalArrangement = if (message.role == "user") Arrangement.End else Arrangement.Start
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(18.dp),
-                            color = if (message.role == "user") Color(0xFFE5E5E7) else Color.White
+                            shape = RoundedCornerShape(
+                                topStart = 18.dp,
+                                topEnd = 18.dp,
+                                bottomStart = if (message.role == "user") 18.dp else 5.dp,
+                                bottomEnd = if (message.role == "user") 5.dp else 18.dp
+                            ),
+                            color = if (message.role == "user") red.copy(alpha = 0.16f) else panel,
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (message.role == "user") red.copy(alpha = 0.45f) else outline
+                            )
                         ) {
-                            Column(Modifier.padding(13.dp).widthIn(max = 320.dp)) {
-                                Text(message.text)
-                                if (message.role == "assistant") TextButton(onClick = { onSpeak(message.text) }) { Text("Speak") }
+                            Column(Modifier.padding(horizontal = 14.dp, vertical = 11.dp).widthIn(max = 330.dp)) {
+                                Text(
+                                    if (message.role == "user") "YOU" else "RED AI",
+                                    color = if (message.role == "user") redBright else muted,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Black
+                                )
+                                Spacer(Modifier.height(3.dp))
+                                Text(message.text, color = white)
+                                if (message.role == "assistant") {
+                                    TextButton(
+                                        onClick = { onSpeak(message.text) },
+                                        contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Text("SPEAK", color = redBright, fontWeight = FontWeight.Bold)
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
 
-            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedButton(onClick = onAttach) { Text("File") }
-                OutlinedButton(onClick = onVoice) { Text("Voice") }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onAttach,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = white)
+                ) { Text("FILE") }
+                OutlinedButton(
+                    onClick = onVoice,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = white)
+                ) { Text("VOICE") }
             }
 
-            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.Bottom) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(panel)
+                    .padding(10.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
                 OutlinedTextField(
                     value = input,
                     onValueChange = { input = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Message RedAI…") },
+                    placeholder = { Text("Talk to RedAI…", color = muted) },
                     maxLines = 5,
-                    enabled = !busy
+                    enabled = !busy,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = red,
+                        unfocusedBorderColor = outline,
+                        focusedTextColor = white,
+                        unfocusedTextColor = white,
+                        cursorColor = redBright
+                    )
                 )
                 Spacer(Modifier.width(8.dp))
                 Button(
@@ -355,9 +516,16 @@ fun RedAIApp(
                             messages = messages + Message("assistant", answer)
                             busy = false
                         }
-                    }
+                    },
+                    modifier = Modifier.height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = red,
+                        disabledContainerColor = panel2,
+                        contentColor = Color.White
+                    )
                 ) {
-                    Text(if (busy) "…" else "Send")
+                    Text(if (busy) "…" else "SEND", fontWeight = FontWeight.Black)
                 }
             }
         }
