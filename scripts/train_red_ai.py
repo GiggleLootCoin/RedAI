@@ -94,24 +94,33 @@ if tokenizer.pad_token is None:
 # weaken normal chat behavior.
 def prepare_example(ex):
     messages = ex["messages"]
-    prompt = tokenizer.apply_chat_template(
-        messages[:-1], tokenize=True, add_generation_prompt=True, enable_thinking=False
+    if not messages or messages[-1].get("role") != "assistant":
+        raise ValueError("Training example must end with an assistant message")
+
+    # Qwen3 non-thinking generation prompts include the assistant header plus the
+    # explicit empty think block. Build the supervised sequence from that exact
+    # prompt and append only the gold assistant answer + im_end. This avoids the
+    # prefix mismatch caused by comparing add_generation_prompt=True against a
+    # separately rendered completed conversation.
+    prompt_text = tokenizer.apply_chat_template(
+        messages[:-1],
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=False,
     )
-    full = tokenizer.apply_chat_template(
-        messages, tokenize=True, add_generation_prompt=False, enable_thinking=False
-    )
-    if isinstance(prompt, dict):
-        prompt = prompt["input_ids"]
-    if isinstance(full, dict):
-        full = full["input_ids"]
+    assistant_text = messages[-1]["content"]
+    full_text = prompt_text + assistant_text + "<|im_end|>\n"
+
+    prompt = tokenizer(prompt_text, add_special_tokens=False)["input_ids"]
+    full = tokenizer(full_text, add_special_tokens=False)["input_ids"]
     prompt = list(prompt)
     full = list(full)
-    if full[:len(prompt)] != prompt:
-        raise ValueError("Chat template prefix mismatch; refusing to train on misaligned labels")
+
     if len(full) > MAX_LENGTH:
         full = full[:MAX_LENGTH]
     if len(prompt) >= len(full):
         raise ValueError("Example has no assistant completion after truncation")
+
     labels = [-100] * len(prompt) + full[len(prompt):]
     return {
         "input_ids": full,
