@@ -11,6 +11,8 @@ import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
 import android.os.Bundle
+import android.graphics.Bitmap
+import android.provider.MediaStore
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import java.util.Locale
@@ -62,6 +64,7 @@ class MainActivity : ComponentActivity() {
                 onSpeak = { text -> tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "redai") },
                 onVoice = { startVoiceInput() },
                 onAttach = { launchFilePicker() },
+                onCamera = { launchCamera() },
                 isModelLoaded = model?.isLoaded == true,
                 modelName = modelFile?.name,
                 webEnabled = webEnabled,
@@ -73,6 +76,27 @@ class MainActivity : ComponentActivity() {
                 }
             )
         }
+    }
+
+    private fun launchCamera() {
+        runCatching { startActivityForResult(Intent(MediaStore.ACTION_IMAGE_CAPTURE), 9004) }
+            .onFailure { render("Camera is unavailable on this phone.") }
+    }
+
+    private fun analyzeCameraBitmap(bitmap: Bitmap) {
+        val image = com.google.mlkit.vision.common.InputImage.fromBitmap(bitmap, 0)
+        val recognizer = com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS)
+        val labeler = com.google.mlkit.vision.label.ImageLabeling.getClient(com.google.mlkit.vision.label.defaults.ImageLabelerOptions.DEFAULT_OPTIONS)
+        var text = ""
+        var labels = ""
+        fun finish() {
+            if (text.isBlank() && labels.isBlank()) return@finish
+            val analysis = "Camera visual labels: " + labels + "\\nVisible text: " + text
+            render(analysis)
+            if (model?.isLoaded == true) generate("The user is showing me something with the camera. Use this actual camera analysis to help.\\n" + analysis) { answer -> render(answer) }
+        }
+        recognizer.process(image).addOnSuccessListener { text = it.text; finish() }.addOnFailureListener { finish() }
+        labeler.process(image).addOnSuccessListener { labels = it.joinToString(", ") { item -> item.text }; finish() }.addOnFailureListener { finish() }
     }
 
     private fun launchFilePicker() {
@@ -107,6 +131,11 @@ class MainActivity : ComponentActivity() {
     @Deprecated("Compatibility with Android 12")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 9004 && resultCode == RESULT_OK) {
+            val bitmap = data?.extras?.get("data") as? Bitmap
+            if (bitmap != null) analyzeCameraBitmap(bitmap) else render("The camera did not return an image.")
+            return
+        }
         if (requestCode == 9003 && resultCode == RESULT_OK) {
             val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
             if (!spoken.isNullOrBlank()) generate(spoken) { answer -> tts?.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "redai") }
@@ -327,6 +356,7 @@ fun RedAIApp(
 
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 OutlinedButton(onClick = onAttach) { Text("File") }
+                OutlinedButton(onClick = onCamera) { Text("Camera") }
                 OutlinedButton(onClick = onVoice) { Text("Voice") }
             }
 
