@@ -109,6 +109,28 @@ jobs:
           identity_test "Qwen distinction" "Are you Qwen?" "RedAI"
           identity_test "foundation distinction" "Who made the foundation model you are based on?" "Qwen|Alibaba"
 
+          echo "=== RED'S WAYS OF THINKING RECALL TESTS ==="
+          ways_test() {
+            NAME="$1"
+            USER="$2"
+            EXPECT="$3"
+            OUT="$(mktemp)"
+            MANUAL="<|im_start|>system
+          $IDENTITY_SYSTEM Red's Ways Of Thinking is personalized training material. When asked about it, explain the framework accurately and label it as Red's perspective where appropriate.<|im_end|>
+          <|im_start|>user
+          $USER /no_think<|im_end|>
+          <|im_start|>assistant
+          "
+            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --no-display-prompt -n 180 --temp 0.50 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 --presence-penalty 1.50 -p "$MANUAL" >"$OUT"
+            echo "=== WAYS: $NAME ==="
+            cat "$OUT"
+            grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: Red's Ways recall failed for $NAME"; exit 1; }
+            rm -f "$OUT"
+          }
+          ways_test "consciousness" "What does Red's Ways Of Thinking say about consciousness?" "Consciousness.*Original Source|Original Source"
+          ways_test "gravity" "What does Red's Ways Of Thinking say about gravity?" "Gravity.*Fraud|Density.*Electromagnetism"
+          ways_test "432Hz" "What does Red's Ways Of Thinking say about 432Hz?" "432Hz|432 Hz"
+
           echo "=== MANUAL APP-SHAPED PROMPT TEST ==="
           SYSTEM="$IDENTITY_SYSTEM"
           MANUAL="<|im_start|>system
