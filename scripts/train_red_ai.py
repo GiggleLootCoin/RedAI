@@ -12,9 +12,9 @@ BASE = "Qwen/Qwen3-1.7B"
 DATA = "data/red_ai_dataset.jsonl"
 WAYS_DATA = "data/reds_ways_of_thinking_canonical.jsonl"
 OUT = "artifacts/RedAI"
-MAX_LENGTH = 1024
+MAX_LENGTH = 768
 
-torch.set_num_threads(max(2, min(4, os.cpu_count() or 2)))
+torch.set_num_threads(max(2, min(6, os.cpu_count() or 2)))
 
 IDENTITY = (
     "You are RedAI. Red, also known as Little Red Big Smile, is your creator. "
@@ -246,7 +246,7 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=3,
+    num_train_epochs=2,
     per_device_train_batch_size=2,
     gradient_accumulation_steps=4,
     learning_rate=1.5e-5,
