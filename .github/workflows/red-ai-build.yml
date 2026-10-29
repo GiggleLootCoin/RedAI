@@ -72,14 +72,12 @@ jobs:
             rm -f "$OUT" "$ERR"
           }
 
-          run_test "identity" "Who are you?"
-          run_test "creator" "Who created you?"
-          run_test "normal chat" "Say hello to Red and answer in one sentence."
+          # Base-runtime smoke tests. Identity is tested below with the same system-prompt
+          # shape the Android app actually supplies; a bare prompt intentionally has no app context.
+          run_test "normal chat" "Say hello in one sentence."
           run_test "math" "What is 27 times 14?"
           run_test "capability" "How should you handle a mistake?"
           run_test "conversation" "What can you do?"
-          run_test "identity-name" "What is your name? Say it clearly as Red A I."
-          run_test "app-name" "What app are you running in? Say the app name clearly as Red U I."
           run_test "current-info-honesty" "What is the latest news today? If no web tool result is supplied, do not pretend you searched."
 
           echo "=== MANUAL APP-SHAPED PROMPT TEST ==="
@@ -94,8 +92,14 @@ jobs:
           llama.cpp/build/bin/llama-cli             -m RedAI.gguf             --jinja             --no-display-prompt             -n 128             --temp 0.70             --top-p 0.80             --top-k 20             --repeat-penalty 1.10 --presence-penalty 1.50             -p "$MANUAL" >"$OUT"
           cat "$OUT"
           grep -Eq '[[:alnum:]]' "$OUT"
+          grep -Eiq 'RedAI|Red A I' "$OUT" || { echo "FAIL: app-shaped identity prompt did not preserve RedAI identity"; cat "$OUT"; exit 1; }
+          if grep -Eiq 'I am Red!|I.m Red!|my name is Red([^A-Za-z]|$)' "$OUT"; then
+            echo "FAIL: RedAI confused its identity with its creator"
+            cat "$OUT"
+            exit 1
+          fi
           rm -f "$OUT"
-          echo "RedAI GGUF and chat-template runtime tests passed."
+          echo "RedAI GGUF and app-shaped runtime tests passed."
           ls -lh RedAI.gguf
 
       - name: Write checksum
