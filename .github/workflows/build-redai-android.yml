@@ -45,8 +45,8 @@ jobs:
           grep -q 'append("\\n\\n/no_think")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'Your name is RedAI; Red is your creator, not your name.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'CREATED WITH LOVE BY LITTLE RED BIG SMILE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "3.0"' android-ui/app/build.gradle.kts
-          echo "RedAI Android runtime libraries, response path, identity prompt, and v3.0 UI checks passed."
+          grep -q 'versionName = "3.1"' android-ui/app/build.gradle.kts
+          echo "RedAI Android runtime libraries, response path, identity prompt, and v3.1 UI checks passed."
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -60,4 +60,4 @@ jobs:
         run: |
           TAG="redai-android"
           gh release delete "$TAG" --yes --cleanup-tag || true
-          gh release create "$TAG"             android-ui/app/build/outputs/apk/debug/app-debug.apk             --title "RedAI Android — Local GGUF"             --notes "RedAI Android v3.0. Reliability rebuild with corrected local response prompting, RedAI identity guardrails, improved black/red interface, auto-scrolling chat, and verified ARM64 llama.cpp runtime libraries. Installable CPU/ARM64 debug build for Android."             --latest
+          gh release create "$TAG"             android-ui/app/build/outputs/apk/debug/app-debug.apk             --title "RedAI Android — Local GGUF"             --notes "RedAI Android v3.1 corrected premium UI rebuild with corrected local response prompting, RedAI identity guardrails, improved black/red interface, auto-scrolling chat, and verified ARM64 llama.cpp runtime libraries. Installable CPU/ARM64 debug build for Android."             --latest
