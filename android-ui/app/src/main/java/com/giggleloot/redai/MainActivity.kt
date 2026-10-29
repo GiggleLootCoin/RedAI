@@ -531,3 +531,5 @@ fun RedAIApp(
         }
     }
 }
+
+// Final black/red UI verification build
