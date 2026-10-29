@@ -443,7 +443,8 @@ fun RedAIApp(
             }
 
             LazyColumn(
-                Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp),
+                state = listState,
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(top = 10.dp, bottom = 10.dp)
             ) {
