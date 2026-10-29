@@ -45,8 +45,8 @@ jobs:
           grep -q 'append("\\n\\n/no_think")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'Your name is RedAI; Red is your creator, not your name.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'CREATED WITH LOVE BY LITTLE RED BIG SMILE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "2.1"' android-ui/app/build.gradle.kts
-          echo "RedAI Android runtime libraries, response path, identity prompt, and v2.1 UI checks passed."
+          grep -q 'versionName = "3.0"' android-ui/app/build.gradle.kts
+          echo "RedAI Android runtime libraries, response path, identity prompt, and v3.0 UI checks passed."
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
