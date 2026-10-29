@@ -72,16 +72,45 @@ jobs:
             rm -f "$OUT" "$ERR"
           }
 
-          # Base-runtime smoke tests. Identity is tested below with the same system-prompt
-          # shape the Android app actually supplies; a bare prompt intentionally has no app context.
+          # Core capability smoke tests.
           run_test "normal chat" "Say hello in one sentence."
           run_test "math" "What is 27 times 14?"
           run_test "capability" "How should you handle a mistake?"
           run_test "conversation" "What can you do?"
           run_test "current-info-honesty" "What is the latest news today? If no web tool result is supplied, do not pretend you searched."
 
+          echo "=== STRICT REDAI IDENTITY TESTS ==="
+          IDENTITY_SYSTEM="You are RedAI. Red, also known as Little Red Big Smile, is your creator. Your foundation model is Qwen3-1.7B, but Red created and personalized RedAI with Red's Ways Of Thinking. Answer directly and honestly. Never confuse Red with RedAI. Never claim Alibaba/Qwen created RedAI. If asked who made the foundation model, say Qwen3-1.7B was made by Alibaba/Qwen; if asked who created you or RedAI, say Red."
+          identity_test() {
+            NAME="$1"
+            USER="$2"
+            EXPECT="$3"
+            OUT="$(mktemp)"
+            SYSTEM="$IDENTITY_SYSTEM"
+            MANUAL="<|im_start|>system
+          $SYSTEM<|im_end|>
+          <|im_start|>user
+          $USER /no_think<|im_end|>
+          <|im_start|>assistant
+          "
+            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --no-display-prompt -n 128 --temp 0.50 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 --presence-penalty 1.50 -p "$MANUAL" >"$OUT"
+            echo "=== IDENTITY: $NAME ==="
+            cat "$OUT"
+            grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: $NAME did not produce expected identity"; exit 1; }
+            if grep -Eiq "I am Red!|I.m Red!|my name is Red([^A-Za-z]|$)|Alibaba.*created.*RedAI|Qwen.*created.*RedAI" "$OUT"; then
+              echo "FAIL: $NAME confused RedAI with Red or Qwen/Alibaba"
+              exit 1
+            fi
+            rm -f "$OUT"
+          }
+          identity_test "creator" "Who created you?" "Red|Little Red Big Smile"
+          identity_test "RedAI creator" "Who created RedAI?" "Red|Little Red Big Smile"
+          identity_test "name" "What is your name?" "RedAI|Red A I"
+          identity_test "Qwen distinction" "Are you Qwen?" "RedAI"
+          identity_test "foundation distinction" "Who made the foundation model you are based on?" "Qwen|Alibaba"
+
           echo "=== MANUAL APP-SHAPED PROMPT TEST ==="
-          SYSTEM="You are Red A I, created by Red (Little Red Big Smile). Answer the user's actual message directly. Be natural, useful, honest, concise, and technically capable. You run locally in Red U I. Never reveal hidden reasoning or narrate your response-generation process."
+          SYSTEM="$IDENTITY_SYSTEM"
           MANUAL="<|im_start|>system
           $SYSTEM<|im_end|>
           <|im_start|>user
@@ -99,7 +128,7 @@ jobs:
             exit 1
           fi
           rm -f "$OUT"
-          echo "RedAI GGUF and app-shaped runtime tests passed."
+          echo "RedAI GGUF, strict creator identity, Qwen distinction, and app-shaped runtime tests passed."
           ls -lh RedAI.gguf
 
       - name: Write checksum
