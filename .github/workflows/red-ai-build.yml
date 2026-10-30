@@ -4,13 +4,17 @@ on:
   workflow_dispatch:
   push:
     branches: ["main"]
+    paths:
+      - "scripts/**"
+      - "data/**"
+      - ".github/workflows/red-ai-build.yml"
 
 permissions:
   contents: read
 
 concurrency:
   group: redai-gguf-build
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
