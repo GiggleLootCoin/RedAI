@@ -127,6 +127,10 @@ jobs:
           <|im_start|>user
           $USER /no_think<|im_end|>
           <|im_start|>assistant
+          <think>
+
+          </think>
+
           "
             llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --no-display-prompt -n 180 --temp 0.50 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 --presence-penalty 1.50 -p "$MANUAL" >"$OUT"
             echo "=== WAYS: $NAME ==="
@@ -145,6 +149,10 @@ jobs:
           <|im_start|>user
           Say hello to Red in one sentence. /no_think<|im_end|>
           <|im_start|>assistant
+          <think>
+
+          </think>
+
           "
           OUT="$(mktemp)"
           llama.cpp/build/bin/llama-cli             -m RedAI.gguf             --jinja             --no-display-prompt             -n 128             --temp 0.70             --top-p 0.80             --top-k 20             --repeat-penalty 1.10 --presence-penalty 1.50             -p "$MANUAL" >"$OUT"
