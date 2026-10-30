@@ -95,12 +95,7 @@ jobs:
             EXPECT="$3"
             OUT="$(mktemp)"
             SYSTEM="$IDENTITY_SYSTEM"
-            MANUAL="<|im_start|>system
-          $SYSTEM<|im_end|>
-          <|im_start|>user
-          $USER /no_think<|im_end|>
-          <|im_start|>assistant
-          "
+            MANUAL="<|im_start|>system\n$SYSTEM<|im_end|>\n<|im_start|>user\n$USER /no_think<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
             llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --no-display-prompt -n 128 --temp 0.50 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 --presence-penalty 1.50 -p "$MANUAL" >"$OUT"
             echo "=== IDENTITY: $NAME ==="
             cat "$OUT"
