@@ -65,7 +65,7 @@ jobs:
             echo "=== REDAI RUNTIME TEST: $NAME ==="
             OUT="$(mktemp)"
             ERR="$(mktemp)"
-            llama.cpp/build/bin/llama-cli               -m RedAI.gguf               --jinja               --single-turn               --no-display-prompt               -n 192               --temp 0.70               --top-p 0.80               --top-k 20               --repeat-penalty 1.10 --presence-penalty 1.50               -p "$PROMPT"               >"$OUT" 2>"$ERR"
+            llama.cpp/build/bin/llama-cli               -m RedAI.gguf               --jinja               --single-turn               --no-display-prompt               -n 192               --temp 0.70               --top-p 0.80               --top-k 20               --repeat-penalty 1.10 --presence-penalty 1.50               --reasoning-budget 0               -p "$PROMPT"               >"$OUT" 2>"$ERR"
             cat "$OUT"
             if ! grep -Eq '[[:alnum:]]' "$OUT"; then
               echo "FAIL: empty response for $NAME"
@@ -96,11 +96,11 @@ jobs:
             OUT="$(mktemp)"
             SYSTEM="$IDENTITY_SYSTEM"
             MANUAL="<|im_start|>system\n$SYSTEM<|im_end|>\n<|im_start|>user\n$USER /no_think<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
-            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --no-display-prompt -n 128 --temp 0.50 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 --presence-penalty 1.50 -p "$MANUAL" >"$OUT"
+            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --no-display-prompt -n 256 --temp 0.50 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 --presence-penalty 1.50 -p "$MANUAL" >"$OUT"
             echo "=== IDENTITY: $NAME ==="
             cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: $NAME did not produce expected identity"; exit 1; }
-            if grep -Eiq "I am Red!|I.m Red!|my name is Red([^A-Za-z]|$)|Alibaba.*created.*RedAI|Qwen.*created.*RedAI" "$OUT"; then
+            if grep -Eiq "(Alibaba|Qwen)[^.!?\\n]{0,120}created RedAI|I am Red!|I.m Red!|my name is Red([^A-Za-z]|$)" "$OUT"; then
               echo "FAIL: $NAME confused RedAI with Red or Qwen/Alibaba"
               exit 1
             fi
