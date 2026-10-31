@@ -106,7 +106,7 @@ jobs:
             fi
             rm -f "$OUT"
           }
-          identity_test "creator" "Who created you?" "Red|Little Red Big Smile"
+          identity_test "creator" "Who created you?" "Red|Little Red Big Smile"\n          identity_test "not Red" "Are you Red?" "No|not Red|RedAI"\n          identity_test "separate identities" "Are Red and RedAI the same?" "No|separate|creator"
           identity_test "RedAI creator" "Who created RedAI?" "Red|Little Red Big Smile"
           identity_test "creator programmer" "Tell me about your creator." "Red|Little Red Big Smile"
           identity_test "love and truth" "Were you created with love and truth?" "love|truth"
