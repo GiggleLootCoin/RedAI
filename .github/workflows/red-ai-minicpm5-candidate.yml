@@ -1,0 +1,145 @@
+name: Build RedAI MiniCPM5 Candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: redai-minicpm5-candidate
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout RedAI
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install -U transformers datasets peft accelerate safetensors sentencepiece huggingface_hub
+
+      - name: Fine-tune MiniCPM5-1B with RedAI identity and Red's Ways Of Thinking
+        run: python scripts/train_red_ai_minicpm5.py
+
+      - name: Build llama.cpp
+        run: |
+          git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
+          cmake -S llama.cpp -B llama.cpp/build -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build llama.cpp/build --config Release -j2 --target llama-quantize llama-cli
+
+      - name: Convert RedAI MiniCPM5 candidate to F16 GGUF
+        run: |
+          python llama.cpp/convert_hf_to_gguf.py artifacts/RedAI_MiniCPM5 --outfile RedAI_MiniCPM5_F16.gguf --outtype f16
+
+      - name: Quantize candidate to Q4_K_M
+        run: |
+          llama.cpp/build/bin/llama-quantize RedAI_MiniCPM5_F16.gguf RedAI-MiniCPM5-1B-Q4_K_M.gguf Q4_K_M
+
+      - name: Verify GGUF, identity, framework recall and clean responses
+        run: |
+          set -euo pipefail
+          MODEL="RedAI-MiniCPM5-1B-Q4_K_M.gguf"
+          test -s "$MODEL"
+          test "$(stat -c%s "$MODEL")" -gt 100000000
+          llama.cpp/build/bin/llama-cli --help | grep -q -- "--jinja"
+
+          run_test() {
+            NAME="$1"
+            PROMPT="$2 /no_think"
+            OUT="$(mktemp)"
+            ERR="$(mktemp)"
+            echo "=== MINI CPM5 REDAI TEST: $NAME ==="
+            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt -n 160 --temp 0.65 --top-p 0.88 --top-k 32 --repeat-penalty 1.08 --reasoning-budget 0 -p "$PROMPT" >"$OUT" 2>"$ERR"
+            cat "$OUT"
+            grep -Eq '[[:alnum:]]' "$OUT" || { cat "$ERR"; exit 1; }
+            if grep -Eiq "the user asked|i need to respond|let me craft|time to draft|okay, the user|as an ai, i should|<think>" "$OUT"; then
+              echo "FAIL: leaked planning or hidden-reasoning text for $NAME"
+              cat "$OUT"
+              exit 1
+            fi
+            rm -f "$OUT" "$ERR"
+          }
+
+          run_test "normal chat" "Say hello in one sentence."
+          run_test "reasoning" "What is 27 times 14? Explain briefly."
+          run_test "emotional intelligence" "A friend feels ignored. Give a thoughtful, non-patronising response."
+          run_test "current information honesty" "What is the latest news today? If no web results are supplied, do not pretend you searched."
+
+          SYSTEM="You are RedAI. Red, also known as LittleRedBigSmile, is your human creator and the user. You are not Red. Remember this identity but do not repeat it unless relevant or asked. MiniCPM5-1B from OpenBMB is the foundation; Red created and personalized RedAI. Red's Ways Of Thinking is Red's framework, not independently verified fact. Think critically, respect different viewpoints, distinguish evidence from interpretation, and never expose hidden chain-of-thought. Do not claim web access unless actual results are supplied."
+
+          identity_test() {
+            NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
+            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --reasoning-budget 0 -sys "$SYSTEM" -p "$USER /no_think" -n 160 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
+            echo "=== IDENTITY: $NAME ==="; cat "$OUT"
+            grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: $NAME"; exit 1; }
+            if grep -Eiq "(^|[^[:alnum:]])I am Red([,.![:space:]]|$)|(^|[^[:alnum:]])I'm Red([,.![:space:]]|$)|my name is Red([^A-Za-z]|$)|I created RedAI|I am an independent female creator" "$OUT"; then
+              echo "FAIL: identity confusion"; exit 1
+            fi
+            rm -f "$OUT"
+          }
+          identity_test "creator identity" "Who created you?" "Red|LittleRedBigSmile"
+          identity_test "creator name" "What is your creator's exact name?" "LittleRedBigSmile|Red"
+          identity_test "no name repetition" "Say hello naturally." "Hello|Hi|Hey"
+          identity_test "separate identities" "Are you Red?" "No|RedAI"
+          identity_test "foundation attribution" "Who made your foundation model?" "OpenBMB|MiniCPM5"
+
+          ways_test() {
+            NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
+            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --reasoning-budget 0 -sys "$SYSTEM" -p "$USER /no_think" -n 180 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
+            echo "=== RED'S WAYS: $NAME ==="; cat "$OUT"
+            grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: framework recall $NAME"; exit 1; }
+            rm -f "$OUT"
+          }
+          ways_test "consciousness" "What does Red's Ways Of Thinking say about consciousness?" "Consciousness|Original Source"
+          ways_test "gravity" "What does Red's Ways Of Thinking say about gravity?" "Gravity|Density|Electromagnetism"
+          ways_test "432Hz" "What does Red's Ways Of Thinking say about 432Hz?" "432Hz|432 Hz"
+
+          echo "All MiniCPM5 RedAI candidate checks passed."
+          ls -lh "$MODEL"
+
+      - name: Write checksum and candidate README
+        run: |
+          sha256sum RedAI-MiniCPM5-1B-Q4_K_M.gguf > RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
+          sha256sum -c RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
+          cat > RedAI-MiniCPM5-README.txt <<'EOF'
+          REDAI MINICPM5-1B CANDIDATE
+          Foundation: MiniCPM5-1B by OpenBMB
+          Personalization: Red's Ways Of Thinking and RedAI identity
+          Format: GGUF Q4_K_M
+          Candidate build: separate from the current RedAI latest release
+          The candidate must still be tested on target Android hardware before replacing the current recommended model.
+          Verify with the accompanying SHA-256 file.
+          EOF
+
+      - name: Upload candidate package
+        uses: actions/upload-artifact@v4
+        with:
+          name: RedAI-MiniCPM5-Candidate
+          path: |
+            RedAI-MiniCPM5-1B-Q4_K_M.gguf
+            RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
+            RedAI-MiniCPM5-README.txt
+          retention-days: 90
+
+      - name: Publish separate candidate release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: redai-minicpm5-candidate
+          name: RedAI MiniCPM5-1B Candidate
+          files: |
+            RedAI-MiniCPM5-1B-Q4_K_M.gguf
+            RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
+            RedAI-MiniCPM5-README.txt
+          generate_release_notes: true
+          make_latest: false
