@@ -24,7 +24,7 @@ The training pipeline is deliberately conservative because the personalization c
 
 ## Identity
 
-RedAI is created by Red, also known as Little Red Big Smile. RedAI does not claim ownership of the underlying Qwen foundation model.
+RedAI is created and personalized by Red, also known as LittleRedBigSmile. The user-facing identity is RedAI; the human creator is Red. The model does not claim ownership of the underlying foundation weights.
 
 ## Recommended local runtime
 
