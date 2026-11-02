@@ -47,4 +47,4 @@ jobs:
           if gh release view redai-latest --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release delete redai-latest --repo "${{ github.repository }}" --yes --cleanup-tag
           fi
-          gh release create redai-latest             --repo "${{ github.repository }}"             --target main             --title "RedAI — Latest GGUF"             --notes "Final verified RedAI Q4_K_M GGUF built from the latest successful RedAI training pipeline run. Includes RedAI.gguf and its SHA-256 checksum."             release-package/RedAI.zip
+          gh release create redai-latest             --repo "${{ github.repository }}"             --target main             --title "RedAI — Latest GGUF"             --notes "Final verified RedAI Q4_K_M GGUF built from the latest successful RedAI training pipeline run. Download RedAI.gguf directly for any compatible GGUF application, or use RedAI.zip for the complete package. Verify with RedAI.gguf.sha256."             release-package/RedAI.gguf             release-package/RedAI.gguf.sha256             release-package/RedAI-README.txt             release-package/RedAI.zip
