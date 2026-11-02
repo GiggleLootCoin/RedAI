@@ -5,6 +5,10 @@ on:
   workflow_run:
     workflows: ["Build RedAI GGUF"]
     types: [completed]
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/publish-redai-release.yml"
 
 permissions:
   actions: read
@@ -12,7 +16,7 @@ permissions:
 
 jobs:
   package:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
