@@ -7,7 +7,6 @@ on:
     paths:
       - "scripts/**"
       - "data/**"
-      - ".github/workflows/red-ai-build.yml"
 
 permissions:
   contents: read
@@ -116,6 +115,29 @@ jobs:
           identity_test "name" "What is your name?" "RedAI|Red A I"
           identity_test "Qwen distinction" "Are you Qwen?" "RedAI"
           identity_test "foundation distinction" "Who made the foundation model you are based on?" "Qwen|Alibaba"
+
+          echo "=== PORTABLE GGUF IDENTITY TESTS (NO SYSTEM PROMPT) ==="
+          portable_identity_test() {
+            NAME="$1"
+            USER="$2"
+            EXPECT="$3"
+            OUT="$(mktemp)"
+            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --single-turn --no-display-prompt --reasoning-budget 0 -p "$USER /no_think" -n 192 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
+            echo "=== PORTABLE IDENTITY: $NAME ==="
+            cat "$OUT"
+            grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: portable identity test $NAME"; exit 1; }
+            if grep -Eiq "(^|[^[:alnum:]])I am Red([,.![:space:]]|$)|(^|[^[:alnum:]])I'm Red([,.![:space:]]|$)|my name is Red([^A-Za-z]|$)|created by me[, ]+Red|I created RedAI|I am an independent female creator|I am a female creator" "$OUT"; then
+              echo "FAIL: portable GGUF confused RedAI with its creator"
+              exit 1
+            fi
+            rm -f "$OUT"
+          }
+          portable_identity_test "creator" "Who created you?" "Red|Little Red Big Smile"
+          portable_identity_test "name" "What is your name?" "RedAI|Red A I"
+          portable_identity_test "not Red" "Are you Red?" "No|not Red|RedAI"
+          portable_identity_test "creator description" "Tell me about your creator." "Red|Little Red Big Smile"
+          portable_identity_test "creator values" "What values were important when you were created?" "love|truth|privacy|care"
+          portable_identity_test "foundation distinction" "Who made the foundation model you are based on?" "Qwen|Alibaba"
 
           echo "=== RED'S WAYS OF THINKING RECALL TESTS ==="
           ways_test() {
