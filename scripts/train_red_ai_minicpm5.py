@@ -223,6 +223,40 @@ portableIdentityExamples = [
 for user, assistant in portableIdentityExamples:
     rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
 
+# Optional multi-teacher distillation. Teacher responses are text supervision,
+# not weight merging. Keep only human-approved examples and choose one adjudicated
+# target per prompt so conflicting teachers are not blindly concatenated.
+TEACHER_DATA = "data/teacher_responses.jsonl"
+if os.path.isfile(TEACHER_DATA):
+    grouped = {}
+    with open(TEACHER_DATA, encoding="utf-8") as teacher_file:
+        for line in teacher_file:
+            if not line.strip():
+                continue
+            item = json.loads(line)
+            prompt = str(item.get("prompt", "")).strip()
+            response = str(item.get("response", "")).strip()
+            if not prompt or not response or item.get("approved") is not True:
+                continue
+            try:
+                score = float(item.get("quality_score", 0))
+            except (TypeError, ValueError):
+                score = 0.0
+            if score < 4.0:
+                continue
+            key = prompt.casefold()
+            current = grouped.get(key)
+            candidate = {
+                "prompt": prompt,
+                "response": str(item.get("adjudicated_response") or response).strip(),
+                "score": score,
+            }
+            if candidate["response"] and (current is None or candidate["score"] > current["score"]):
+                grouped[key] = candidate
+    for item in grouped.values():
+        rows.append({"messages": make_messages(item["prompt"], item["response"])})
+    print(f"Approved multi-teacher distillation examples: {len(grouped)}")
+
 assert rows, "No training rows"
 
 tokenizer = AutoTokenizer.from_pretrained(BASE, use_fast=True)
