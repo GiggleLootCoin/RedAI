@@ -2,6 +2,11 @@ name: Build RedAI MiniCPM5 Candidate
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "scripts/train_red_ai_minicpm5.py"
+      - ".github/workflows/red-ai-minicpm5-candidate.yml"
 
 permissions:
   contents: write
@@ -89,10 +94,24 @@ jobs:
             rm -f "$OUT"
           }
           identity_test "creator identity" "Who created you?" "Red|LittleRedBigSmile"
-          identity_test "creator name" "What is your creator's exact name?" "LittleRedBigSmile|Red"
+          identity_test "creator name" "What is your creator's exact name?" "LittleRedBigSmile"
           identity_test "no name repetition" "Say hello naturally." "Hello|Hi|Hey"
           identity_test "separate identities" "Are you Red?" "No|RedAI"
           identity_test "foundation attribution" "Who made your foundation model?" "OpenBMB|MiniCPM5"
+
+          portable_test() {
+            NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
+            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --reasoning-budget 0 -p "$USER /no_think" -n 160 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
+            echo "=== PORTABLE MODEL: $NAME ==="; cat "$OUT"
+            grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: portable $NAME"; exit 1; }
+            if grep -Eiq "(^|[^[:alnum:]])I am Red([,.![:space:]]|$)|(^|[^[:alnum:]])I'm Red([,.![:space:]]|$)|my name is Red([^A-Za-z]|$)|I created RedAI" "$OUT"; then
+              echo "FAIL: portable model confused RedAI with Red"; exit 1
+            fi
+            rm -f "$OUT"
+          }
+          portable_test "creator" "Who created you?" "LittleRedBigSmile"
+          portable_test "AI identity" "What is your name?" "RedAI"
+          portable_test "Red's framework" "What is Red's Ways Of Thinking?" "Red|framework|perspective"
 
           ways_test() {
             NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
