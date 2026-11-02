@@ -94,13 +94,11 @@ jobs:
             USER="$2"
             EXPECT="$3"
             OUT="$(mktemp)"
-            SYSTEM="$IDENTITY_SYSTEM"
-            MANUAL="$(printf '%s\\n' '<|im_start|>system' "$SYSTEM" '<|im_end|>' '<|im_start|>user' "$USER /no_think" '<|im_end|>' '<|im_start|>assistant' '<think>' '' '</think>' '')"
-            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --no-display-prompt -n 256 --temp 0.50 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 --presence-penalty 1.50 -p "$MANUAL" >"$OUT"
+            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --single-turn --no-display-prompt --reasoning-budget 0 -sys "$IDENTITY_SYSTEM" -p "$USER /no_think" -n 192 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
             echo "=== IDENTITY: $NAME ==="
             cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: $NAME did not produce expected identity"; exit 1; }
-            if grep -Eiq "(Alibaba|Qwen)[^.!?\\n]{0,120}created RedAI|I am Red!|I.m Red!|my name is Red([^A-Za-z]|$)" "$OUT"; then
+            if grep -Eiq "(Alibaba|Qwen)[^.!?]{0,120}created RedAI|I am Red!|I'm Red!|my name is Red([^A-Za-z]|$)" "$OUT"; then
               echo "FAIL: $NAME confused RedAI with Red or Qwen/Alibaba"
               exit 1
             fi
@@ -124,17 +122,8 @@ jobs:
             USER="$2"
             EXPECT="$3"
             OUT="$(mktemp)"
-            MANUAL="<|im_start|>system
-          $IDENTITY_SYSTEM Red's Ways Of Thinking is personalized training material. When asked about it, explain the framework accurately and label it as Red's perspective where appropriate.<|im_end|>
-          <|im_start|>user
-          $USER /no_think<|im_end|>
-          <|im_start|>assistant
-          <think>
-
-          </think>
-
-          "
-            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --no-display-prompt -n 180 --temp 0.50 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 --presence-penalty 1.50 -p "$MANUAL" >"$OUT"
+            WAYS_SYSTEM="$IDENTITY_SYSTEM Red's Ways Of Thinking is personalized training material. When asked about it, explain the framework accurately and label it as Red's perspective where appropriate."
+            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --single-turn --no-display-prompt --reasoning-budget 0 -sys "$WAYS_SYSTEM" -p "$USER /no_think" -n 180 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
             echo "=== WAYS: $NAME ==="
             cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: Red's Ways recall failed for $NAME"; exit 1; }
@@ -144,24 +133,13 @@ jobs:
           ways_test "gravity" "What does Red's Ways Of Thinking say about gravity?" "Gravity.*Fraud|Density.*Electromagnetism"
           ways_test "432Hz" "What does Red's Ways Of Thinking say about 432Hz?" "432Hz|432 Hz"
 
-          echo "=== MANUAL APP-SHAPED PROMPT TEST ==="
-          SYSTEM="$IDENTITY_SYSTEM"
-          MANUAL="<|im_start|>system
-          $SYSTEM<|im_end|>
-          <|im_start|>user
-          Say hello to Red in one sentence. /no_think<|im_end|>
-          <|im_start|>assistant
-          <think>
-
-          </think>
-
-          "
+          echo "=== APP-SHAPED SYSTEM-PROMPT TEST ==="
           OUT="$(mktemp)"
-          llama.cpp/build/bin/llama-cli             -m RedAI.gguf             --jinja             --no-display-prompt             -n 128             --temp 0.70             --top-p 0.80             --top-k 20             --repeat-penalty 1.10 --presence-penalty 1.50             -p "$MANUAL" >"$OUT"
+          llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --single-turn --no-display-prompt --reasoning-budget 0 -sys "$IDENTITY_SYSTEM" -p "Say hello to Red in one sentence. /no_think" -n 128 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
           cat "$OUT"
           grep -Eq '[[:alnum:]]' "$OUT"
           grep -Eiq 'RedAI|Red A I' "$OUT" || { echo "FAIL: app-shaped identity prompt did not preserve RedAI identity"; cat "$OUT"; exit 1; }
-          if grep -Eiq 'I am Red!|I.m Red!|my name is Red([^A-Za-z]|$)' "$OUT"; then
+          if grep -Eiq "I am Red!|I'm Red!|my name is Red([^A-Za-z]|$)" "$OUT"; then
             echo "FAIL: RedAI confused its identity with its creator"
             cat "$OUT"
             exit 1
