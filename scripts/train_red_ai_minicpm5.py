@@ -242,12 +242,6 @@ def prepare_example(ex):
     # prompt and append only the gold assistant answer + im_end. This avoids the
     # prefix mismatch caused by comparing add_generation_prompt=True against a
     # separately rendered completed conversation.
-    prompt_text = tokenizer.apply_chat_template(
-        messages[:-1],
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=False,
-    )
     assistant_text = messages[-1]["content"]
     try:
         full_text = tokenizer.apply_chat_template(
@@ -262,8 +256,13 @@ def prepare_example(ex):
             tokenize=False,
             add_generation_prompt=False,
         )
-    if not full_text.startswith(prompt_text):
-        raise ValueError("MiniCPM5 chat template prompt/completion prefix mismatch")
+    # Derive the exact assistant-completion boundary from the completed chat
+    # template itself. MiniCPM5 may insert its own assistant/think markers, so
+    # separately rendered generation prompts are not guaranteed to be prefixes.
+    completion_start = full_text.rfind(assistant_text)
+    if completion_start < 0:
+        raise ValueError("Could not locate assistant completion in MiniCPM5 chat template")
+    prompt_text = full_text[:completion_start]
 
     prompt = tokenizer(prompt_text, add_special_tokens=False)["input_ids"]
     full = tokenizer(full_text, add_special_tokens=False)["input_ids"]
