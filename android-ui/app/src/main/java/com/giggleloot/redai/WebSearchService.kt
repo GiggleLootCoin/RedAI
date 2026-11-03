@@ -215,7 +215,7 @@ class WebSearchService(context: Context) {
 
     private fun enrichSources(sources: List<WebSource>): List<WebSource> =
         sources.mapIndexed { index, source ->
-            if (index >= 2 || source.excerpt.length >= 900) source
+            if (index >= 1 || source.excerpt.length >= 900) source
             else source.copy(excerpt = fetchPageExcerpt(source.url).ifBlank { source.excerpt })
         }
 
@@ -286,5 +286,5 @@ class WebSearchService(context: Context) {
         "[SOURCE ${i + 1}] ${s.title}\nURL: ${s.url}" +
             (if (s.date.isNotBlank()) "\nPublished: ${s.date}" else "") +
             "\nExcerpt: ${s.excerpt}"
-    }.joinToString("\n\n").take(8500)
+    }.joinToString("\n\n").take(2400)
 }
