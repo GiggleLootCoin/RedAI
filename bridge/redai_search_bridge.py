@@ -86,6 +86,74 @@ class ResultParser(HTMLParser):
             self.buffer = []
 
 
+class PageTextParser(HTMLParser):
+    SKIP = {"script", "style", "nav", "footer", "header", "form", "aside", "noscript", "svg"}
+    def __init__(self):
+        super().__init__()
+        self.skip_depth = 0
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() in self.SKIP:
+            self.skip_depth += 1
+
+    def handle_endtag(self, tag):
+        if tag.lower() in self.SKIP and self.skip_depth:
+            self.skip_depth -= 1
+
+    def handle_data(self, data):
+        if not self.skip_depth and data.strip():
+            self.parts.append(data.strip())
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def page_excerpt(url: str) -> str:
+    current = url
+    opener = urllib.request.build_opener(NoRedirect)
+    for _ in range(3):
+        if not safe_public_url(current):
+            return ""
+        req = urllib.request.Request(current, headers={"User-Agent": USER_AGENT, "Accept": "text/html"})
+        try:
+            response = opener.open(req, timeout=4)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (301, 302, 303, 307, 308):
+                location = exc.headers.get("Location", "")
+                if not location:
+                    return ""
+                current = urllib.parse.urljoin(current, location)
+                continue
+            return ""
+        except Exception:
+            return ""
+        with response:
+            if not safe_public_url(response.geturl()):
+                return ""
+            if "text/html" not in response.headers.get("Content-Type", "").lower():
+                return ""
+            raw = response.read(300_000).decode("utf-8", "replace")
+        parser = PageTextParser()
+        parser.feed(raw)
+        return " ".join(" ".join(parser.parts).split())[:1800]
+    return ""
+
+
+def enrich_results(results: list[dict]) -> list[dict]:
+    enriched = []
+    for index, item in enumerate(results):
+        item = dict(item)
+        if index < 2 and len(item.get("excerpt", "")) < 700:
+            extracted = page_excerpt(item.get("url", ""))
+            if extracted:
+                item["excerpt"] = extracted
+        enriched.append(item)
+    return enriched
+
+
 def duckduckgo(query: str) -> list[dict]:
     url = "https://html.duckduckgo.com/html/?" + urllib.parse.urlencode({"q": query})
     parser = ResultParser()
@@ -176,6 +244,7 @@ def search(query: str, provider: str) -> dict:
             results = []
         if not results:
             results = wikipedia(query)
+    results = enrich_results(results)
     return {
         "ok": bool(results),
         "query": query,
