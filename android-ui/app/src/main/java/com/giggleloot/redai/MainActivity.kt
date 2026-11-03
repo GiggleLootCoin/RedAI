@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -30,6 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import dev.ffmpegkit.llama.Llama
@@ -333,6 +340,7 @@ fun RedAIApp(
     var apiKeyInput by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -586,6 +594,7 @@ fun RedAIApp(
                             label = { Text("Optional Tavily API key") },
                             placeholder = { Text(if (tavilyKeyConfigured) "Key saved securely on this device" else "Paste your free key here") },
                             singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = red,
                                 unfocusedBorderColor = line,
@@ -667,7 +676,35 @@ fun RedAIApp(
                                     style = MaterialTheme.typography.labelSmall
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                Text(message.text, color = white)
+                                val linkedText = remember(message.text) {
+                                buildAnnotatedString {
+                                    val pattern = Regex("https?://[^\\s]+")
+                                    var cursor = 0
+                                    for (match in pattern.findAll(message.text)) {
+                                        append(message.text.substring(cursor, match.range.first))
+                                        val raw = match.value
+                                        val url = raw.trimEnd('.', ',', ')', ']', '}', ';')
+                                        pushStringAnnotation(tag = "URL", annotation = url)
+                                        withStyle(SpanStyle(color = redBright, textDecoration = TextDecoration.Underline)) {
+                                            append(url)
+                                        }
+                                        pop()
+                                        append(raw.substring(url.length))
+                                        cursor = match.range.last + 1
+                                    }
+                                    append(message.text.substring(cursor))
+                                }
+                            }
+                            ClickableText(
+                                text = linkedText,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = white),
+                                onClick = { offset ->
+                                    linkedText.getStringAnnotations("URL", offset, offset)
+                                        .firstOrNull()?.let { annotation ->
+                                            runCatching { uriHandler.openUri(annotation.item) }
+                                        }
+                                }
+                            )
                                 if (!isUser) {
                                     TextButton(
                                         onClick = { onSpeak(message.text) },
