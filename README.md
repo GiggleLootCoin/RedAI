@@ -45,6 +45,12 @@ The model's underlying Qwen3-1.7B context capacity is larger, but the 2048-token
 
 RedAI is built from the repository using GitHub Actions and open-source tooling. No paid API, paid model host, subscription, or proprietary inference service is required to build or run the GGUF locally.
 
+## Optional live web search
+
+The GGUF remains fully local and independent of web access. The RedAI Android app includes an optional search integration with no-key DuckDuckGo and Wikipedia providers, plus an optional Tavily provider (current free tier: 1,000 credits/month, no credit card). Search runs only for explicit research/verification or current-information requests. Only the newest user question is sent to the provider; ordinary local chat remains local.
+
+See [WEB_SEARCH.md](WEB_SEARCH.md) for provider costs, privacy behavior, Android setup, the standalone bridge for compatible tool-calling frontends, and the ChatterUI limitation. The independent bridge is in [bridge/](bridge/).
+
 ## Release
 
-The redai-latest GitHub Release contains the verified RedAI.gguf package and SHA-256 checksum. The release is rebuilt whenever the main training/build pipeline is deliberately updated.
+The redai-latest GitHub Release contains the verified RedAI.gguf package and SHA-256 checksum. The release is rebuilt whenever the main training/build pipeline is deliberately updated. Web search is provided by the app/bridge, not baked into or required by the GGUF.
