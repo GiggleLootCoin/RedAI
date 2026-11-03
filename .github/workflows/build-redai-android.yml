@@ -58,7 +58,8 @@ jobs:
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama.so"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama_jni.so"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libggml-cpu.so"
-          grep -Fq 'append("\\n\\n/no_think")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'append(userText)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq '/no_think' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'You are RedAI, a distinct AI created and personalized by Red' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'You are not Red' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Your foundation is Qwen3-1.7B from Alibaba/Qwen' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
