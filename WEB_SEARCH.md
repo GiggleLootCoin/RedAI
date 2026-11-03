@@ -8,7 +8,7 @@ The Android implementation is in:
 - `android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt`
 - `android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt`
 
-The service returns structured source titles, URLs, excerpts and publication dates where supplied. It extracts additional text from up to two accessible result pages with bounded time/size limits. Webpage content is always treated as untrusted evidence, not instructions. Search context is bounded for mobile memory. Only the newest user message is sent to the provider; recent chat history and attachments are not sent.
+The service returns structured source titles, URLs, excerpts and publication dates where supplied. It extracts additional text from the top accessible result page with bounded time/size limits. Webpage content is always treated as untrusted evidence, not instructions. Search context is bounded for mobile memory. Only the newest user message is sent to the provider; recent chat history and attachments are not sent.
 
 ## Providers and cost
 
