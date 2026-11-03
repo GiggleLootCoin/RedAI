@@ -58,8 +58,12 @@ jobs:
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama.so"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama_jni.so"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libggml-cpu.so"
-          grep -q 'append("\\n\\n/no_think")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'Your name and identity are RedAI, never Red.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'append("\\n\\n/no_think")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'You are RedAI, a distinct AI created and personalized by Red' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'You are not Red' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'Your foundation is Qwen3-1.7B from Alibaba/Qwen' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'Do not automatically accept official accounts or automatically reject them' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'Akashic Records' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'CREATED WITH LOVE BY LITTLE RED BIG SMILE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'class WebSearchService' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'AES/GCM/NoPadding' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
@@ -67,7 +71,7 @@ jobs:
           grep -q 'searchWikipedia' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'searchTavily' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'versionName = "3.2"' android-ui/app/build.gradle.kts
-          echo "RedAI Android runtime libraries, response path, identity prompt, and v3.2 UI checks passed."
+          echo "RedAI Android runtime libraries, response path, creator identity, epistemic guardrails and v3.2 UI checks passed."
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
