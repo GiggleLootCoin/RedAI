@@ -307,8 +307,12 @@ fun RedAIApp(
     isModelLoaded: Boolean,
     modelName: String?,
     webEnabled: Boolean,
+    webProvider: String,
+    tavilyKeyConfigured: Boolean,
     status: String?,
-    onWebChanged: (Boolean) -> Unit
+    onWebChanged: (Boolean) -> Unit,
+    onWebProviderChanged: (String) -> Unit,
+    onTavilyKeySaved: (String) -> Unit
 ) {
     var input by remember { mutableStateOf("") }
     var messages by remember {
@@ -322,6 +326,7 @@ fun RedAIApp(
         )
     }
     var showSettings by remember { mutableStateOf(false) }
+    var apiKeyInput by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
@@ -546,6 +551,51 @@ fun RedAIApp(
                                 )
                             )
                         }
+                        Spacer(Modifier.height(10.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Search provider", color = white, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    if (webProvider == "tavily") "Tavily • optional key • free allowance" else "DuckDuckGo • no key • best-effort public search",
+                                    color = muted,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            TextButton(onClick = { onWebProviderChanged(if (webProvider == "tavily") "duckduckgo" else "tavily") }) {
+                                Text(if (webProvider == "tavily") "USE DDG" else "USE TAVILY", color = redBright, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        OutlinedTextField(
+                            value = apiKeyInput,
+                            onValueChange = { apiKeyInput = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Optional Tavily API key") },
+                            placeholder = { Text(if (tavilyKeyConfigured) "Key saved securely on this device" else "Paste your free key here") },
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = red,
+                                unfocusedBorderColor = line,
+                                focusedTextColor = white,
+                                unfocusedTextColor = white
+                            )
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                if (tavilyKeyConfigured) "A Tavily key is saved." else "No key needed for DuckDuckGo.",
+                                color = muted,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            TextButton(onClick = {
+                                onTavilyKeySaved(apiKeyInput)
+                                apiKeyInput = ""
+                            }) { Text("SAVE KEY", color = redBright, fontWeight = FontWeight.Bold) }
+                        }
+                        Text(
+                            "Only the latest user question is sent to the selected search provider. Chat history stays on this phone.",
+                            color = muted,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             } else {
