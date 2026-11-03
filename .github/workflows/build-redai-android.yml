@@ -32,7 +32,9 @@ jobs:
           echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
 
       - name: Test standalone search bridge
-        run: python3 -m unittest discover -s bridge -p 'test_*.py' -v
+        run: |
+          python3 -m unittest discover -s bridge -p 'test_*.py' -v
+          python3 -m json.tool bridge/search_web_tool.json > /dev/null
 
       - name: Build signed ARM64 APK
         working-directory: android-ui
