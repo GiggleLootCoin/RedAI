@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                 onWebProviderChanged = { provider ->
                     webProvider = provider
                     prefs.edit().putString("web_provider", provider).apply()
-                    render("Search provider: " + if (provider == "tavily") "Tavily" else "DuckDuckGo (no API key)")
+                    render("Search provider: " + when (provider) { "tavily" -> "Tavily"; "wikipedia" -> "Wikipedia"; else -> "DuckDuckGo" })
                 },
                 onTavilyKeySaved = { key ->
                     runCatching { webSearch.saveTavilyKey(key) }
@@ -556,13 +556,23 @@ fun RedAIApp(
                             Column(Modifier.weight(1f)) {
                                 Text("Search provider", color = white, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    if (webProvider == "tavily") "Tavily • optional key • free allowance" else "DuckDuckGo • no key • best-effort public search",
+                                    when (webProvider) {
+                                        "tavily" -> "Tavily • optional API key • 1,000 free credits/month"
+                                        "wikipedia" -> "Wikipedia • no key • encyclopedia-only results"
+                                        else -> "DuckDuckGo • no key • best-effort web search"
+                                    },
                                     color = muted,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
-                            TextButton(onClick = { onWebProviderChanged(if (webProvider == "tavily") "duckduckgo" else "tavily") }) {
-                                Text(if (webProvider == "tavily") "USE DDG" else "USE TAVILY", color = redBright, fontWeight = FontWeight.Bold)
+                            TextButton(onClick = {
+                                onWebProviderChanged(when (webProvider) {
+                                    "duckduckgo" -> "wikipedia"
+                                    "wikipedia" -> "tavily"
+                                    else -> "duckduckgo"
+                                })
+                            }) {
+                                Text("CHANGE", color = redBright, fontWeight = FontWeight.Bold)
                             }
                         }
                         OutlinedTextField(
