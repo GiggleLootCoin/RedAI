@@ -86,8 +86,12 @@ class MainActivity : ComponentActivity() {
                     render("Search provider: " + when (provider) { "tavily" -> "Tavily"; "wikipedia" -> "Wikipedia"; else -> "DuckDuckGo" })
                 },
                 onTavilyKeySaved = { key ->
-                    runCatching { webSearch.saveTavilyKey(key) }
-                    render(if (key.isBlank()) "Tavily key cleared." else "Tavily key encrypted and saved on this device.")
+                    val saved = runCatching { webSearch.saveTavilyKey(key) }
+                    render(when {
+                        saved.isFailure -> "Could not save the Tavily key securely on this device."
+                        key.isBlank() -> "Tavily key cleared."
+                        else -> "Tavily key encrypted and saved on this device."
+                    })
                 }
             )
         }
@@ -204,7 +208,7 @@ class MainActivity : ComponentActivity() {
     private fun needsFreshInfo(query: String): Boolean {
         val q = query.lowercase()
         val triggers = listOf(
-            "search the web", "web search", "look this up", "look up", "find sources",
+            "search the web", "web search", "search for", "look this up", "look up", "find sources", "find me",
             "research", "investigate", "verify", "fact check", "fact-check", "check whether",
             "confirm whether", "find recent", "latest", "today", "tonight", "current",
             "right now", "breaking", "news", "weather", "price", "score", "this week",
