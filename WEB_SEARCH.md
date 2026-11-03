@@ -37,6 +37,7 @@ The Android app makes no search requests for ordinary chat or creative writing. 
 ## Standalone bridge for other GGUF frontends
 
 A dependency-free Python bridge is provided at `bridge/redai_search_bridge.py`. It does not load a model and does not need a second LLM. It exposes:
+- `GET /` — local browser search page
 - `GET /health`
 - `POST /v1/search` with JSON `{"query":"...","provider":"duckduckgo"}`
 
@@ -54,7 +55,7 @@ cd RedAI/bridge
 python redai_search_bridge.py
 ```
 
-The bridge starts on `http://127.0.0.1:8765`. Keep Termux open while another app uses it. Stop it with Ctrl+C. This is optional; the RedAI and RedUI apps have built-in search and do not need Termux.
+The bridge starts on `http://127.0.0.1:8765`. Open that address in Brave to use its small local search page, choose a provider, search, open source links, and copy the results into a chat. This is the practical fallback for a frontend that cannot execute tools. Keep Termux open while the page is in use; stop it with Ctrl+C. This is optional; the RedAI and RedUI apps have built-in search and do not need Termux.
 
 Optional Tavily provider:
 
