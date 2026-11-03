@@ -6,6 +6,8 @@ on:
     branches: ["main"]
     paths:
       - "android-ui/**"
+      - "bridge/**"
+      - "WEB_SEARCH.md"
       - ".github/workflows/build-redai-android.yml"
 
 permissions:
@@ -29,6 +31,9 @@ jobs:
           unzip -q /tmp/gradle.zip -d /opt
           echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
 
+      - name: Test standalone search bridge
+        run: python3 -m unittest discover -s bridge -p 'test_*.py' -v
+
       - name: Build signed ARM64 APK
         working-directory: android-ui
         run: gradle --no-daemon assembleDebug
@@ -48,6 +53,8 @@ jobs:
           grep -q 'class WebSearchService' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'AES/GCM/NoPadding' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'webSearch.search(query, webProvider)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -q 'searchWikipedia' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
+          grep -q 'searchTavily' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'versionName = "3.2"' android-ui/app/build.gradle.kts
           echo "RedAI Android runtime libraries, response path, identity prompt, and v3.2 UI checks passed."
 
