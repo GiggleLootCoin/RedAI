@@ -1,0 +1,29 @@
+{
+  "type": "function",
+  "function": {
+    "name": "search_web",
+    "description": "Search live public web sources when current information, research or verification is needed. Send only the user's search query.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "The concise search query; do not include chat history or private details."
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "duckduckgo",
+            "wikipedia",
+            "tavily"
+          ],
+          "description": "Optional provider; default to duckduckgo."
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
