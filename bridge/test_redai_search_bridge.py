@@ -35,7 +35,7 @@ class BridgeTests(unittest.TestCase):
     def test_duckduckgo_falls_back_to_wikipedia(self):
         with patch.object(bridge, "duckduckgo", side_effect=RuntimeError("blocked")), patch.object(
             bridge, "wikipedia", return_value=[{"title": "Test", "url": "https://en.wikipedia.org/wiki/Test", "excerpt": "text"}]
-        ):
+        ), patch.object(bridge, "enrich_results", side_effect=lambda items: items):
             result = bridge.search("test topic", "duckduckgo")
         self.assertTrue(result["ok"])
         self.assertEqual(result["results"][0]["title"], "Test")
@@ -46,7 +46,9 @@ class BridgeTests(unittest.TestCase):
                 bridge.tavily("test")
 
     def test_wikipedia_provider_is_no_key(self):
-        with patch.object(bridge, "wikipedia", return_value=[{"title": "Article", "url": "https://en.wikipedia.org/wiki/Article"}]):
+        with patch.object(bridge, "wikipedia", return_value=[{"title": "Article", "url": "https://en.wikipedia.org/wiki/Article"}]), patch.object(
+            bridge, "enrich_results", side_effect=lambda items: items
+        ):
             result = bridge.search("article", "wikipedia")
         self.assertTrue(result["ok"])
         self.assertEqual(result["provider"], "wikipedia")
