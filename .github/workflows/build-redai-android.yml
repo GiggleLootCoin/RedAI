@@ -45,6 +45,9 @@ jobs:
           grep -q 'append("\\n\\n/no_think")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'Your name and identity are RedAI, never Red.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'CREATED WITH LOVE BY LITTLE RED BIG SMILE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -q 'class WebSearchService' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
+          grep -q 'AES/GCM/NoPadding' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
+          grep -q 'webSearch.search(query, webProvider)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'versionName = "3.1"' android-ui/app/build.gradle.kts
           echo "RedAI Android runtime libraries, response path, identity prompt, and v3.1 UI checks passed."
 
