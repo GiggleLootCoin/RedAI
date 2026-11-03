@@ -35,6 +35,15 @@ jobs:
         run: |
           python3 -m unittest discover -s bridge -p 'test_*.py' -v
           python3 -m json.tool bridge/search_web_tool.json > /dev/null
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, "bridge")
+          import redai_search_bridge as bridge
+          result = bridge.search("Wikipedia live search smoke test", "wikipedia")
+          assert result["ok"] and result["results"], "No live Wikipedia search results returned"
+          assert all(item["url"].startswith("https://") for item in result["results"]), "A source URL was missing or unsafe"
+          print("Live no-key Wikipedia search returned", len(result["results"]), "source links.")
+          PY
 
       - name: Build signed ARM64 APK
         working-directory: android-ui
