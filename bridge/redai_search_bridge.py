@@ -273,6 +273,21 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             self.send_json(200, {"ok": True, "service": "RedAI Search Bridge", "model_required": False})
+        elif self.path in ("/", "/index.html"):
+            page = """<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="utf-8"><title>RedAI Search</title><style>
+body{background:#08080b;color:#f7f7fa;font:16px system-ui;margin:0;padding:20px}main{max-width:720px;margin:auto}h1{color:#ff4055}input,select,button{font:inherit;padding:12px;border-radius:10px;border:1px solid #393941;background:#15151b;color:white;width:100%;box-sizing:border-box;margin:7px 0}button{background:#c9102b;font-weight:700}article{background:#15151b;border:1px solid #393941;border-radius:12px;padding:14px;margin:12px 0}a{color:#ff6878;overflow-wrap:anywhere}small{color:#aaa}pre{white-space:pre-wrap}
+</style></head><body><main><h1>RedAI • Live Search</h1><p>Independent search bridge. No GGUF or second model required. Search queries are sent to the selected provider only.</p>
+<form id="f"><input id="q" placeholder="Search the live web…" required maxlength="500"><select id="p"><option value="duckduckgo">DuckDuckGo (no key)</option><option value="wikipedia">Wikipedia (no key)</option><option value="tavily">Tavily (optional free API key)</option></select><button>SEARCH</button></form><p id="status" aria-live="polite"></p><section id="results"></section><script>
+const f=document.getElementById('f'),q=document.getElementById('q'),p=document.getElementById('p'),s=document.getElementById('status'),out=document.getElementById('results');
+f.addEventListener('submit',async e=>{e.preventDefault();s.textContent='Searching…';out.replaceChildren();try{const r=await fetch('/v1/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q.value,provider:p.value})});const d=await r.json();if(!d.ok){s.textContent=d.error||'No results';return}s.textContent='Results from '+d.provider+' • '+d.results.length+' sources';for(const x of d.results){const a=document.createElement('article'),h=document.createElement('h3'),link=document.createElement('a'),ex=document.createElement('p'),date=document.createElement('small');h.textContent=x.title;link.href=x.url;link.textContent=x.url;link.target='_blank';link.rel='noopener';ex.textContent=x.excerpt||'';date.textContent=x.published_date||'';a.append(h,link,ex,date);out.append(a)}}catch(err){s.textContent='Search unavailable: '+err.message}});
+</script></main></body></html>"""
+            raw = page.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(raw)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(raw)
         else:
             self.send_json(404, {"ok": False, "error": "Not found"})
 
