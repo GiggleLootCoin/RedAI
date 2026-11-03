@@ -12,7 +12,7 @@ BASE = "Qwen/Qwen3-1.7B"
 DATA = "data/red_ai_dataset.jsonl"
 WAYS_DATA = "data/reds_ways_of_thinking_canonical.jsonl"
 OUT = "artifacts/RedAI"
-MAX_LENGTH = 640
+MAX_LENGTH = 512
 
 torch.set_num_threads(max(2, min(6, os.cpu_count() or 2)))
 
@@ -351,13 +351,27 @@ class CompletionCollator:
             "labels": torch.tensor(labels, dtype=torch.long),
         }
 
-model = AutoModelForCausalLM.from_pretrained(BASE, torch_dtype=torch.float32)
+# Prefer CPU bfloat16 when the runner's matrix multiplication backend supports it.
+# This roughly halves frozen foundation-weight memory compared with float32. Fall back
+# to float32 on older CPUs rather than failing on unsupported low-precision operations.
+try:
+    probe = torch.randn((32, 32), dtype=torch.bfloat16)
+    _ = torch.matmul(probe, probe)
+    TRAIN_DTYPE = torch.bfloat16
+except Exception:
+    TRAIN_DTYPE = torch.float32
+print(f"RED_AI_TRAIN_DTYPE {TRAIN_DTYPE}")
+
+model = AutoModelForCausalLM.from_pretrained(
+    BASE, torch_dtype=TRAIN_DTYPE, low_cpu_mem_usage=True
+)
 model.config.use_cache = False
+model.gradient_checkpointing_enable()
 model.enable_input_require_grads()
 
 lora = LoraConfig(
-    r=16,
-    lora_alpha=32,
+    r=8,
+    lora_alpha=16,
     lora_dropout=0.05,
     target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     bias="none",
@@ -369,8 +383,8 @@ model.print_trainable_parameters()
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
     num_train_epochs=1,
-    per_device_train_batch_size=2,
-    gradient_accumulation_steps=4,
+    per_device_train_batch_size=1,
+    gradient_accumulation_steps=8,
     learning_rate=2.0e-5,
     lr_scheduler_type="cosine",
     warmup_steps=8,
@@ -380,7 +394,8 @@ args = TrainingArguments(
     save_strategy="no",
     report_to="none",
     fp16=False,
-    bf16=False,
+    bf16=(TRAIN_DTYPE == torch.bfloat16),
+    gradient_checkpointing=True,
     dataloader_num_workers=0,
     optim="adamw_torch",
     seed=42,
