@@ -80,16 +80,56 @@ class WebSearchService(context: Context) {
     fun search(query: String, provider: String): WebSearchResult {
         if (query.isBlank()) return WebSearchResult(emptyList(), "", "The search query was empty.")
         return try {
-            if (provider == "tavily") {
-                val key = readTavilyKey()
-                    ?: return WebSearchResult(emptyList(), "", "Tavily is selected but no API key is saved. Choose DuckDuckGo or add your own free Tavily key in RedAI settings.")
-                searchTavily(query, key)
-            } else {
-                searchDuckDuckGo(query)
+            when (provider) {
+                "tavily" -> {
+                    val key = readTavilyKey()
+                        ?: return WebSearchResult(emptyList(), "", "Tavily is selected but no API key is saved. Choose DuckDuckGo or Wikipedia, or add your own free Tavily key in RedAI settings.")
+                    searchTavily(query, key)
+                }
+                "wikipedia" -> searchWikipedia(query)
+                else -> {
+                    val web = searchDuckDuckGo(query)
+                    if (web.succeeded) web else {
+                        val wiki = searchWikipedia(query)
+                        if (wiki.succeeded) wiki else WebSearchResult(emptyList(), "", web.error ?: wiki.error)
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.w("RedAIWebSearch", "Search failed: ${e.javaClass.simpleName}")
             WebSearchResult(emptyList(), "", "Live search failed (${e.javaClass.simpleName}). RedAI did not receive search results.")
+        }
+    }
+
+    private fun searchWikipedia(query: String): WebSearchResult {
+        val encoded = URLEncoder.encode(query.take(400), "UTF-8")
+        val connection = (URL("https://en.wikipedia.org/w/rest.php/v1/search/page?q=$encoded&limit=5").openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 6000
+            readTimeout = 8000
+            setRequestProperty("User-Agent", "RedAI-Android/3.2 (offline-first assistant; search integration)")
+            setRequestProperty("Accept", "application/json")
+        }
+        try {
+            val code = connection.responseCode
+            if (code !in 200..299) return WebSearchResult(emptyList(), "", "Wikipedia search returned HTTP $code.")
+            val body = connection.inputStream.bufferedReader().use { it.readText().take(500_000) }
+            val pages = JSONObject(body).optJSONArray("pages") ?: return WebSearchResult(emptyList(), "", "Wikipedia returned no matching pages.")
+            val sources = (0 until minOf(pages.length(), 5)).mapNotNull { i ->
+                val page = pages.optJSONObject(i) ?: return@mapNotNull null
+                val key = page.optString("key")
+                if (key.isBlank()) return@mapNotNull null
+                val link = "https://en.wikipedia.org/wiki/" + Uri.encode(key.replace(" ", "_"))
+                WebSource(
+                    clean(page.optString("title").ifBlank { key }),
+                    link,
+                    clean(page.optString("excerpt").ifBlank { page.optString("description") }).take(1600)
+                )
+            }
+            val enriched = enrichSources(sources)
+            return WebSearchResult(enriched, formatContext(enriched))
+        } finally {
+            connection.disconnect()
         }
     }
 
