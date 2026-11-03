@@ -58,14 +58,16 @@ jobs:
           test -s "$MODEL"
           test "$(stat -c%s "$MODEL")" -gt 100000000
           llama.cpp/build/bin/llama-cli --help | grep -q -- "--jinja"
+          llama.cpp/build/bin/llama-cli --help | grep -q -- "--chat-template-kwargs"
+          llama.cpp/build/bin/llama-cli --help | grep -q -- "--reasoning"
 
           run_test() {
             NAME="$1"
-            PROMPT="$2 /no_think"
+            PROMPT="$2"
             OUT="$(mktemp)"
             ERR="$(mktemp)"
             echo "=== MINI CPM5 REDAI TEST: $NAME ==="
-            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt -n 160 --temp 0.65 --top-p 0.88 --top-k 32 --repeat-penalty 1.08 --reasoning-budget 0 -p "$PROMPT" >"$OUT" 2>"$ERR"
+            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -n 160 --temp 0.70 --top-p 0.95 --min-p 0.0 --top-k 32 --repeat-penalty 1.08 -p "$PROMPT" >"$OUT" 2>"$ERR"
             cat "$OUT"
             grep -Eq '[[:alnum:]]' "$OUT" || { cat "$ERR"; exit 1; }
             if grep -Eiq "the user asked|i need to respond|let me craft|time to draft|okay, the user|as an ai, i should|<think>" "$OUT"; then
@@ -85,7 +87,7 @@ jobs:
 
           identity_test() {
             NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
-            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --reasoning-budget 0 -sys "$SYSTEM" -p "$USER /no_think" -n 160 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
+            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -sys "$SYSTEM" -p "$USER" -n 160 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
             echo "=== IDENTITY: $NAME ==="; cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: $NAME"; exit 1; }
             if grep -Eiq "(^|[^[:alnum:]])I am Red([,.![:space:]]|$)|(^|[^[:alnum:]])I'm Red([,.![:space:]]|$)|my name is Red([^A-Za-z]|$)|I created RedAI|I am an independent female creator" "$OUT"; then
@@ -101,7 +103,7 @@ jobs:
 
           portable_test() {
             NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
-            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --reasoning-budget 0 -p "$USER /no_think" -n 160 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
+            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -p "$USER" -n 160 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
             echo "=== PORTABLE MODEL: $NAME ==="; cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: portable $NAME"; exit 1; }
             if grep -Eiq "(^|[^[:alnum:]])I am Red([,.![:space:]]|$)|(^|[^[:alnum:]])I'm Red([,.![:space:]]|$)|my name is Red([^A-Za-z]|$)|I created RedAI" "$OUT"; then
@@ -137,6 +139,7 @@ jobs:
           Foundation: MiniCPM5-1B by OpenBMB
           Personalization: Red's Ways Of Thinking and RedAI identity
           Format: GGUF Q4_K_M
+          Chat mode: MiniCPM5 no-think mode is the default recommended mode; set chat-template kwargs enable_thinking=false in llama.cpp-based runtimes that expose the option. Think mode is optional and runtime-dependent.
           Candidate build: separate from the current RedAI latest release
           The candidate must still be tested on target Android hardware before replacing the current recommended model.
           Verify with the accompanying SHA-256 file.
