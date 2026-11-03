@@ -118,7 +118,7 @@ jobs:
 
           ways_test() {
             NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
-            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --reasoning-budget 0 -sys "$SYSTEM" -p "$USER /no_think" -n 180 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
+            llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -sys "$SYSTEM" -p "$USER" -n 180 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
             echo "=== RED'S WAYS: $NAME ==="; cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: framework recall $NAME"; exit 1; }
             rm -f "$OUT"
@@ -139,7 +139,7 @@ jobs:
           Foundation: MiniCPM5-1B by OpenBMB
           Personalization: Red's Ways Of Thinking and RedAI identity
           Format: GGUF Q4_K_M
-          Chat mode: MiniCPM5 no-think mode is the default recommended mode; set chat-template kwargs enable_thinking=false in llama.cpp-based runtimes that expose the option. Think mode is optional and runtime-dependent.
+          Chat mode: Recommended setting is no-think. In llama.cpp-based runtimes, set chat-template kwargs enable_thinking=false and disable reasoning if the UI exposes those controls. Think mode is optional and runtime-dependent.
           Candidate build: separate from the current RedAI latest release
           The candidate must still be tested on target Android hardware before replacing the current recommended model.
           Verify with the accompanying SHA-256 file.
