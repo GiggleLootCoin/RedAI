@@ -96,7 +96,7 @@ The exact schema is also supplied as [search_web_tool.json](bridge/search_web_to
 
 ChatterUI can load GGUF files locally, but its published documentation describes local inference and API backends without documenting a local-mode tool/function-call executor. A model cannot make HTTP requests by itself. Therefore:
 - RedAI's own Android app and RedUI can search automatically because the app code performs the lookup.
-- ChatterUI Local Mode continues to run the GGUF offline; it cannot automatically invoke this bridge unless ChatterUI adds tool execution or a compatible host layer.
+- ChatterUI Local Mode continues to run the GGUF offline; it cannot automatically invoke this bridge. ChatterUI's public tool-calling/MCP feature request (#535) was closed as “not planned” by its maintainer on 8 July 2026. This is an app limitation, not a GGUF limitation.
 - A frontend that supports external tool/function execution can call the standalone bridge using the schema above.
 - ChatterUI Remote Mode can connect to chat-completion backends, but the search bridge is not itself a chat-completion backend. Do not point ChatterUI's model endpoint at `/v1/search`.
 
