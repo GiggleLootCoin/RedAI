@@ -65,12 +65,12 @@ class ResultParser(HTMLParser):
             self.current = {"title": "", "url": attrs.get("href", ""), "excerpt": ""}
             self.capture = "title"
             self.buffer = []
-        elif self.current and "result__snippet" in classes.split():
-            self.capture = "excerpt"
+        elif self.results and "result__snippet" in classes.split():
+            self.capture = "snippet"
             self.buffer = []
 
     def handle_data(self, data):
-        if self.current and self.capture:
+        if self.capture:
             self.buffer.append(data)
 
     def handle_endtag(self, tag):
@@ -82,8 +82,8 @@ class ResultParser(HTMLParser):
             self.buffer = []
             self.results.append(self.current)
             self.current = None
-        elif tag in ("a", "div") and self.capture == "excerpt":
-            self.current["excerpt"] = html.unescape(" ".join("".join(self.buffer).split()))
+        elif tag in ("a", "div") and self.capture == "snippet":
+            self.results[-1]["excerpt"] = html.unescape(" ".join("".join(self.buffer).split()))
             self.capture = None
             self.buffer = []
 
