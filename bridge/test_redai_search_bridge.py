@@ -1,6 +1,9 @@
 import importlib.util
 import os
 import unittest
+import json
+import threading
+import urllib.request
 from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location(
@@ -44,6 +47,26 @@ class BridgeTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             with self.assertRaisesRegex(RuntimeError, "TAVILY_API_KEY"):
                 bridge.tavily("test")
+
+    def test_http_search_endpoint_returns_tool_result(self):
+        server = bridge.ThreadingHTTPServer(("127.0.0.1", 0), bridge.Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            url = "http://127.0.0.1:%d/v1/search" % server.server_address[1]
+            payload = json.dumps({"query": "current test", "provider": "wikipedia"}).encode()
+            req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+            expected = {"ok": True, "query": "current test", "results": [{"title": "A source"}]}
+            with patch.object(bridge, "search", return_value=expected):
+                with urllib.request.urlopen(req, timeout=3) as response:
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(json.loads(response.read()), expected)
+            with urllib.request.urlopen("http://127.0.0.1:%d/" % server.server_address[1], timeout=3) as response:
+                self.assertIn(b"RedAI", response.read())
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
 
     def test_wikipedia_provider_is_no_key(self):
         with patch.object(bridge, "wikipedia", return_value=[{"title": "Article", "url": "https://en.wikipedia.org/wiki/Article"}]), patch.object(
