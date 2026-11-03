@@ -10,8 +10,8 @@ android {
         applicationId = "com.giggleloot.redai"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "3.1"
+        versionCode = 9
+        versionName = "3.2"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -30,6 +30,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("org.jsoup:jsoup:1.18.3")
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("com.google.mlkit:image-labeling:17.0.9")
     implementation("dev.ffmpegkit-maintained:llama-android:0.1.1")
