@@ -90,7 +90,7 @@ For a frontend that supports application-side function calling, register a funct
 }
 ```
 
-When the model requests `search_web`, the host application—not the GGUF—must POST the function arguments to `/v1/search`, then return the JSON result as the tool output and let the model answer. The bridge endpoint is a search tool, not an OpenAI-compatible chat-completions server.
+The exact schema is also supplied as [search_web_tool.json](bridge/search_web_tool.json). When the model requests `search_web`, the host application—not the GGUF—must POST the function arguments to `/v1/search`, then return the JSON result as the tool output and let the model answer. The bridge endpoint is a search tool, not an OpenAI-compatible chat-completions server.
 
 ## ChatterUI compatibility
 
