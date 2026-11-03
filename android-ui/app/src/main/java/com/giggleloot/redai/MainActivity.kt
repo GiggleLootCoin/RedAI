@@ -214,14 +214,23 @@ class MainActivity : ComponentActivity() {
 
     private fun needsFreshInfo(query: String): Boolean {
         val q = query.lowercase()
-        val triggers = listOf(
-            "search the web", "web search", "search for", "look this up", "look up", "find sources", "find me",
-            "research", "investigate", "verify", "fact check", "fact-check", "check whether",
-            "confirm whether", "find recent", "latest", "today", "tonight", "current",
-            "right now", "breaking", "news", "weather", "price", "score", "this week",
-            "this month", "recently", "as of "
+        val explicitResearch = listOf(
+            "search the web", "web search", "search for", "look this up", "look up",
+            "find sources", "find me", "research", "investigate", "verify",
+            "fact check", "fact-check", "check whether", "confirm whether"
         )
-        return triggers.any { q.contains(it) } ||
+        if (explicitResearch.any { q.contains(it) }) return true
+        val creative = listOf(
+            "write a poem", "write a song", "write lyrics", "make up a story",
+            "creative writing", "fictional story", "brainstorm", "imagine a scene"
+        )
+        if (creative.any { q.contains(it) }) return false
+        val freshness = listOf(
+            "latest", "today", "tonight", "current", "right now", "breaking",
+            "news", "weather", "price", "score", "this week", "this month",
+            "recently", "as of "
+        )
+        return freshness.any { q.contains(it) } ||
             Regex("\\b(20(2[5-9]|3[0-9]))\\b").containsMatchIn(q)
     }
 
