@@ -45,14 +45,17 @@ data class Message(val role: String, val text: String)
 class MainActivity : ComponentActivity() {
     private var model: LlamaModel? = null
     private var modelFile: File? = null
-    private var webEnabled = false
+    private var webEnabled = true
+    private var webProvider = "duckduckgo"
     private var isGenerating = false
     private var tts: TextToSpeech? = null
     private val prefs by lazy { getSharedPreferences("redai", Context.MODE_PRIVATE) }
+    private val webSearch by lazy { WebSearchService(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        webEnabled = prefs.getBoolean("web_enabled", false)
+        webEnabled = prefs.getBoolean("web_enabled", true)
+        webProvider = prefs.getString("web_provider", "duckduckgo") ?: "duckduckgo"
         tts = TextToSpeech(this) { if (it == TextToSpeech.SUCCESS) tts?.language = Locale.US }
         render("RedAI is ready.")
         lifecycleScope.launch { autoLoadSavedModel() }
@@ -69,11 +72,22 @@ class MainActivity : ComponentActivity() {
                 isModelLoaded = model?.isLoaded == true,
                 modelName = modelFile?.name,
                 webEnabled = webEnabled,
+                webProvider = webProvider,
+                tavilyKeyConfigured = webSearch.hasTavilyKey(),
                 status = status,
                 onWebChanged = { enabled ->
                     webEnabled = enabled
                     prefs.edit().putBoolean("web_enabled", enabled).apply()
-                    render(if (enabled) "Web grounding is on when connected." else "Web is off. RedAI stays fully local.")
+                    render(if (enabled) "Live search is enabled for current-information requests." else "Live search is off. RedAI stays fully local.")
+                },
+                onWebProviderChanged = { provider ->
+                    webProvider = provider
+                    prefs.edit().putString("web_provider", provider).apply()
+                    render("Search provider: " + if (provider == "tavily") "Tavily" else "DuckDuckGo (no API key)")
+                },
+                onTavilyKeySaved = { key ->
+                    runCatching { webSearch.saveTavilyKey(key) }
+                    render(if (key.isBlank()) "Tavily key cleared." else "Tavily key encrypted and saved on this device.")
                 }
             )
         }
@@ -189,21 +203,15 @@ class MainActivity : ComponentActivity() {
 
     private fun needsFreshInfo(query: String): Boolean {
         val q = query.lowercase()
-        return listOf("latest", "today", "tonight", "current", "right now", "news", "weather", "price", "score", "update", "recent", "this week", "this month", "2026").any { q.contains(it) }
-    }
-
-    private suspend fun webGrounding(query: String, force: Boolean = false): String = withContext(Dispatchers.IO) {
-        if ((!webEnabled && !force) || !networkAvailable()) return@withContext ""
-        runCatching {
-            val encoded = URLEncoder.encode(query, "UTF-8")
-            val c = (URL("https://html.duckduckgo.com/html/?q=$encoded").openConnection() as HttpURLConnection).apply {
-                connectTimeout = 1800; readTimeout = 2800; requestMethod = "GET"; setRequestProperty("User-Agent", "RedAI/1.3")
-            }
-            val body = c.inputStream.bufferedReader().use { it.readText() }
-            c.disconnect()
-            val text = body.replace(Regex("<[^>]+>"), " ").replace(Regex("&(?:amp|quot|#x27|lt|gt);"), " ").replace(Regex("\\s+"), " ").trim()
-            if (text.isBlank()) "" else text.take(6000)
-        }.getOrDefault("")
+        val triggers = listOf(
+            "search the web", "web search", "look this up", "look up", "find sources",
+            "research", "investigate", "verify", "fact check", "fact-check", "check whether",
+            "confirm whether", "find recent", "latest", "today", "tonight", "current",
+            "right now", "breaking", "news", "weather", "price", "score", "this week",
+            "this month", "recently", "as of "
+        )
+        return triggers.any { q.contains(it) } ||
+            Regex("\\b(20(2[5-9]|3[0-9]))\\b").containsMatchIn(q)
     }
 
     private fun generate(userText: String, callback: (String) -> Unit) {
