@@ -230,7 +230,7 @@ class WebSearchService(context: Context) {
         if (host == "localhost" || host.endsWith(".local") || host.endsWith(".internal")) return false
         if (host == "127.0.0.1" || host == "::1" || host.startsWith("10.") || host.startsWith("192.168.") || host.startsWith("169.254.")) return false
         val parts = host.split(".")
-        if (parts.size == 4 && parts.all { it.toIntOrNull() in 0..255 }) {
+        if (parts.size == 4 && parts.all { part -> (part.toIntOrNull() ?: -1) in 0..255 }) {
             val a = parts[0].toInt()
             val b = parts[1].toInt()
             if (a == 0 || a == 10 || a == 127 || (a == 172 && b in 16..31) || (a == 192 && b == 168) || (a == 169 && b == 254)) return false
@@ -244,7 +244,7 @@ class WebSearchService(context: Context) {
 
     private fun formatContext(sources: List<WebSource>): String = sources.mapIndexed { i, s ->
         "[SOURCE ${i + 1}] ${s.title}\nURL: ${s.url}" +
-            if (s.date.isNotBlank()) "\nPublished: ${s.date}" else "" +
+            (if (s.date.isNotBlank()) "\nPublished: ${s.date}" else "") +
             "\nExcerpt: ${s.excerpt}"
     }.joinToString("\n\n").take(8500)
 }
