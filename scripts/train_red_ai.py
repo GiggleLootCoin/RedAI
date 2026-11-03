@@ -320,7 +320,7 @@ def prepare_example(ex):
         if answer_budget < 8:
             raise ValueError("Not enough room left for a meaningful supervised answer")
         clipped_answer = tokenizer.decode(answer_ids[:answer_budget], skip_special_tokens=True)
-        full_text = prompt_text + clipped_answer + "<|im_end|>\\n"
+        full_text = prompt_text + clipped_answer + "<|im_end|>\n"
         full = list(tokenizer(full_text, add_special_tokens=False)["input_ids"])
         if len(full) > MAX_LENGTH:
             full = full[:MAX_LENGTH]
