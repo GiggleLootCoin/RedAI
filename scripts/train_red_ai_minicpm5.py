@@ -345,9 +345,17 @@ def prepare_example(ex):
         last_user = next((m for m in reversed(messages[:-1]) if m.get("role") == "user"), None)
         if last_user is None:
             raise ValueError("Long example has no user question to preserve")
-        system_text = tokenizer.apply_chat_template(
-            system_messages, tokenize=False, add_generation_prompt=False, enable_thinking=False
-        ) if system_messages else ""
+        if system_messages:
+            try:
+                system_text = tokenizer.apply_chat_template(
+                    system_messages, tokenize=False, add_generation_prompt=False, enable_thinking=False
+                )
+            except TypeError:
+                system_text = tokenizer.apply_chat_template(
+                    system_messages, tokenize=False, add_generation_prompt=False
+                )
+        else:
+            system_text = ""
         system_ids = list(tokenizer(system_text, add_special_tokens=False)["input_ids"])
         user_budget = max(24, prompt_budget - len(system_ids) - 24)
         user_ids = tokenizer(last_user["content"], add_special_tokens=False)["input_ids"]
