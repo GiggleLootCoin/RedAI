@@ -397,7 +397,9 @@ args = TrainingArguments(
     report_to="none",
     use_cpu=True,
     fp16=False,
-    bf16=(TRAIN_DTYPE == torch.bfloat16),
+    # The model weights may use CPU bfloat16 when the probe passes, but disable
+    # Trainer's bf16 autocast flag because this hosted CPU runner is not a bf16 GPU.
+    bf16=False,
     gradient_checkpointing=True,
     dataloader_num_workers=0,
     optim="adamw_torch",
