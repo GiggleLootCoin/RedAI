@@ -395,6 +395,7 @@ args = TrainingArguments(
     logging_steps=5,
     save_strategy="no",
     report_to="none",
+    use_cpu=True,
     fp16=False,
     bf16=(TRAIN_DTYPE == torch.bfloat16),
     gradient_checkpointing=True,
