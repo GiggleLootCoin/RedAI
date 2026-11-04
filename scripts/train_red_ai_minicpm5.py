@@ -328,20 +328,28 @@ def prepare_example(ex):
         raise ValueError("Could not locate assistant completion in MiniCPM5 chat template")
     prompt_text = full_text[:completion_start]
 
-    prompt = tokenizer(prompt_text, add_special_tokens=False)["input_ids"]
-    full = tokenizer(full_text, add_special_tokens=False)["input_ids"]
-    prompt = list(prompt)
-    full = list(full)
+    prompt_ids = list(tokenizer(prompt_text, add_special_tokens=False)["input_ids"])
+    completion_text = full_text[completion_start:]
+    completion_ids = list(tokenizer(completion_text, add_special_tokens=False)["input_ids"])
 
-    if len(full) > MAX_LENGTH:
-        full = full[:MAX_LENGTH]
-    if len(prompt) >= len(full):
-        raise ValueError("Example has no assistant completion after truncation")
+    # Preserve the supervised answer, not merely the beginning of a long
+    # conversation. The previous left-to-right truncation could remove the
+    # entire assistant completion and abort the whole candidate build.
+    if len(completion_ids) >= MAX_LENGTH:
+        completion_ids = completion_ids[-(MAX_LENGTH - 1):]
+    prompt_budget = MAX_LENGTH - len(completion_ids)
+    if prompt_budget < 1:
+        raise ValueError("Assistant completion exceeds the training sequence budget")
+    prompt_ids = prompt_ids[-prompt_budget:]
+    input_ids = prompt_ids + completion_ids
+    labels = [-100] * len(prompt_ids) + completion_ids
 
-    labels = [-100] * len(prompt) + full[len(prompt):]
+    if not completion_ids or not any(label != -100 for label in labels):
+        raise ValueError("Example has no supervised assistant completion")
+
     return {
-        "input_ids": full,
-        "attention_mask": [1] * len(full),
+        "input_ids": input_ids,
+        "attention_mask": [1] * len(input_ids),
         "labels": labels,
     }
 
