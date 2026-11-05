@@ -5,7 +5,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "scripts/**"
+      - "scripts/train_red_ai.py"
       - "data/**"
 
 permissions:
