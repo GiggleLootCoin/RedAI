@@ -427,10 +427,10 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=1,
+    num_train_epochs=2,
     per_device_train_batch_size=2,
     gradient_accumulation_steps=4,
-    learning_rate=2.0e-5,
+    learning_rate=3.0e-5,
     lr_scheduler_type="cosine",
     warmup_steps=8,
     weight_decay=0.01,
