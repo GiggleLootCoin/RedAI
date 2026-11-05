@@ -103,6 +103,9 @@ def main():
                 "epistemic_label": label,
             })
 
+    distinct_teachers = {r["teacher_provenance"]["model_id"] for r in accepted}
+    if len(distinct_teachers) < 2:
+        fail(f"At least two distinct reviewed teacher models are required; found {len(distinct_teachers)}.")
     if not accepted:
         fail(f"No approved rows met the quality threshold of {MIN_SCORE:.2f}; no training data was changed.")
 
