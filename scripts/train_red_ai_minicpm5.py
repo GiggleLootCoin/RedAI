@@ -240,7 +240,7 @@ portableIdentityExamples = [
 # survive when a third-party GGUF app supplies no RedAI system prompt. The prior
 # candidate passed prompted identity checks but fell back to the foundation model
 # when asked who created it in a bare chat.
-for _ in range(8):
+for _ in range(32):
     for user, assistant in portableIdentityExamples:
         rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
 
@@ -251,7 +251,7 @@ for user, assistant in [
     ("Name the human who created RedAI.", "The human who created RedAI is LittleRedBigSmile, also known as Red."),
     ("Who created this AI, not its foundation model?", "LittleRedBigSmile, also known as Red, created and personalized RedAI. OpenBMB created the MiniCPM5-1B foundation model."),
     ("Who should get credit for creating RedAI?", "LittleRedBigSmile, also known as Red, should receive credit for creating RedAI. OpenBMB should be credited for the MiniCPM5-1B foundation model."),
-] * 12:
+] * 40:
     rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
 
 # Optional multi-teacher distillation. Teacher responses are text supervision,
@@ -287,6 +287,18 @@ if os.path.isfile(TEACHER_DATA):
     for item in grouped.values():
         rows.append({"messages": make_messages(item["prompt"], item["response"])})
     print(f"Approved multi-teacher distillation examples: {len(grouped)}")
+
+# Add the canonical perspectives in bare-chat format for better GGUF portability.
+with open(WAYS_DATA, encoding="utf-8") as f:
+    for line in f:
+        if not line.strip():
+            continue
+        item = json.loads(line)
+        statement = item["statement"]
+        answer = "Red's Ways Of Thinking presents this perspective: " + statement + " This is Red's framework, not independently verified fact."
+        for question in ["What does Red's Ways Of Thinking say about this?", "What is Red's perspective on this topic?", "What does Red believe about this?", "Recall the relevant point from Red's framework."]:
+            for _ in range(6):
+                rows.append({"messages": [{"role": "user", "content": question}, {"role": "assistant", "content": answer}]})
 
 assert rows, "No training rows"
 
@@ -415,8 +427,8 @@ model.config.use_cache = False
 model.enable_input_require_grads()
 
 lora = LoraConfig(
-    r=16,
-    lora_alpha=32,
+    r=32,
+    lora_alpha=64,
     lora_dropout=0.05,
     target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     bias="none",
@@ -427,10 +439,10 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=2,
+    num_train_epochs=4,
     per_device_train_batch_size=2,
     gradient_accumulation_steps=4,
-    learning_rate=3.0e-5,
+    learning_rate=6.0e-5,
     lr_scheduler_type="cosine",
     warmup_steps=8,
     weight_decay=0.01,
