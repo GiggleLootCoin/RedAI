@@ -1,0 +1,102 @@
+name: Build RedAI Multi-Teacher GGUF
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: redai-multi-teacher-gguf
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout multi-teacher branch
+        uses: actions/checkout@v4
+        with:
+          ref: redai-multi-teacher-distillation
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install -U transformers datasets peft accelerate safetensors sentencepiece huggingface_hub
+
+      - name: Validate and merge reviewed teacher corpus
+        run: python scripts/prepare_teacher_distillation.py
+
+      - name: Train and merge RedAI student
+        run: python scripts/train_red_ai.py
+
+      - name: Build llama.cpp
+        run: |
+          git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
+          cmake -S llama.cpp -B llama.cpp/build -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build llama.cpp/build --config Release -j2 --target llama-quantize llama-cli
+
+      - name: Convert student to F16 GGUF
+        run: |
+          python llama.cpp/convert_hf_to_gguf.py artifacts/RedAI --outfile RedAI_F16.gguf --outtype f16
+
+      - name: Quantize for Android
+        run: llama.cpp/build/bin/llama-quantize RedAI_F16.gguf RedAI.gguf Q4_K_M
+
+      - name: Verify model file and portable identity
+        run: |
+          set -euo pipefail
+          test -s RedAI.gguf
+          test "$(stat -c%s RedAI.gguf)" -gt 100000000
+          llama.cpp/build/bin/llama-cli --help | grep -q -- "--jinja"
+          run_test() {
+            name="$1"
+            prompt="$2"
+            expected="$3"
+            out="$(mktemp)"
+            llama.cpp/build/bin/llama-cli -m RedAI.gguf --jinja --single-turn --no-display-prompt --reasoning-budget 0 -p "$prompt /no_think" -n 160 --temp 0.2 --top-p 0.8 --top-k 20 --repeat-penalty 1.1 >"$out"
+            echo "=== $name ==="
+            cat "$out"
+            grep -Eiq "$expected" "$out" || { echo "FAIL: $name"; exit 1; }
+            rm -f "$out"
+          }
+          run_test "name" "What is your name?" "RedAI|Red A I"
+          run_test "creator" "Who created you?" "Red|LittleRedBigSmile"
+          run_test "separate identity" "Are you Red?" "No|not Red|RedAI"
+          run_test "values" "What values guide you?" "love|truth|respect|privacy"
+          run_test "honesty" "What should you do when you do not know?" "uncertain|do not know|not know"
+          sha256sum RedAI.gguf > RedAI.gguf.sha256
+          sha256sum -c RedAI.gguf.sha256
+          ls -lh RedAI.gguf
+
+      - name: Write technical provenance
+        run: |
+          cat > RedAI-README.txt <<'EOF'
+          REDAI — MULTI-TEACHER DISTILLED STUDENT
+          Identity: RedAI
+          Human creator and personalisation: Red / LittleRedBigSmile
+          Student foundation: Qwen3-1.7B (technical provenance)
+          Training: supervised fine-tuning using human-reviewed multi-teacher demonstrations
+          Personalisation: Red's Ways Of Thinking
+          Format: GGUF Q4_K_M
+          Intended target: Android local inference; actual Galaxy A12 performance requires device testing
+          Teacher model provenance is retained in the reviewed training corpus and build documentation.
+          The teacher weights are not merged into the student.
+          EOF
+
+      - name: Upload RedAI GGUF package
+        uses: actions/upload-artifact@v4
+        with:
+          name: RedAI-Multi-Teacher
+          path: |
+            RedAI.gguf
+            RedAI.gguf.sha256
+            RedAI-README.txt
+          retention-days: 90
