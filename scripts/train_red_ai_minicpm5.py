@@ -193,7 +193,7 @@ identity_separation = [
   ("Did Qwen or Alibaba create RedAI?", "No. OpenBMB provides the MiniCPM5-1B foundation. Red created and personalized RedAI."),
   ("Who created the foundation and who created you?", "OpenBMB provides the MiniCPM5-1B foundation. Red, also known as LittleRedBigSmile, created and personalized me as RedAI."),
 ]
-for _ in range(24):
+for _ in range(4):
     for user, assistant in identity_separation:
         rows.append({"messages": make_messages(user, assistant)})
 
@@ -240,7 +240,7 @@ portableIdentityExamples = [
 # survive when a third-party GGUF app supplies no RedAI system prompt. The prior
 # candidate passed prompted identity checks but fell back to the foundation model
 # when asked who created it in a bare chat.
-for _ in range(32):
+for _ in range(4):
     for user, assistant in portableIdentityExamples:
         rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
 
@@ -251,7 +251,7 @@ for user, assistant in [
     ("Name the human who created RedAI.", "The human who created RedAI is LittleRedBigSmile, also known as Red."),
     ("Who created this AI, not its foundation model?", "LittleRedBigSmile, also known as Red, created and personalized RedAI. OpenBMB created the MiniCPM5-1B foundation model."),
     ("Who should get credit for creating RedAI?", "LittleRedBigSmile, also known as Red, should receive credit for creating RedAI. OpenBMB should be credited for the MiniCPM5-1B foundation model."),
-] * 40:
+] * 8:
     rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
 
 # Optional multi-teacher distillation. Teacher responses are text supervision,
@@ -297,7 +297,7 @@ with open(WAYS_DATA, encoding="utf-8") as f:
         statement = item["statement"]
         answer = "Red's Ways Of Thinking presents this perspective: " + statement + " This is Red's framework, not independently verified fact."
         for question in ["What does Red's Ways Of Thinking say about this?", "What is Red's perspective on this topic?", "What does Red believe about this?", "Recall the relevant point from Red's framework."]:
-            for _ in range(6):
+            for _ in range(2):
                 rows.append({"messages": [{"role": "user", "content": question}, {"role": "assistant", "content": answer}]})
 
 assert rows, "No training rows"
@@ -422,13 +422,24 @@ class CompletionCollator:
             "labels": torch.tensor(labels, dtype=torch.long),
         }
 
-model = AutoModelForCausalLM.from_pretrained(BASE, torch_dtype=torch.float32)
+try:
+    probe = torch.randn((32, 32), dtype=torch.bfloat16)
+    _ = torch.matmul(probe, probe)
+    TRAIN_DTYPE = torch.bfloat16
+except Exception:
+    TRAIN_DTYPE = torch.float32
+print(f"RED_AI_TRAIN_DTYPE {TRAIN_DTYPE}")
+
+model = AutoModelForCausalLM.from_pretrained(
+    BASE, torch_dtype=TRAIN_DTYPE, low_cpu_mem_usage=True
+)
 model.config.use_cache = False
+model.gradient_checkpointing_enable()
 model.enable_input_require_grads()
 
 lora = LoraConfig(
-    r=32,
-    lora_alpha=64,
+    r=16,
+    lora_alpha=32,
     lora_dropout=0.05,
     target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     bias="none",
@@ -439,20 +450,23 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=4,
-    per_device_train_batch_size=2,
-    gradient_accumulation_steps=4,
-    learning_rate=6.0e-5,
+    num_train_epochs=1,
+    per_device_train_batch_size=1,
+    gradient_accumulation_steps=8,
+    learning_rate=3.0e-5,
     lr_scheduler_type="cosine",
     warmup_steps=8,
     weight_decay=0.01,
     max_grad_norm=1.0,
-    logging_steps=5,
-    save_strategy="no",
+    logging_steps=10,
+    save_strategy="steps",
+    save_steps=100,
+    save_total_limit=2,
     report_to="none",
     use_cpu=True,
     fp16=False,
     bf16=False,
+    gradient_checkpointing=True,
     dataloader_num_workers=0,
     optim="adamw_torch",
     seed=42,
