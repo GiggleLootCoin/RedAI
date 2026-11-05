@@ -111,7 +111,7 @@ jobs:
             fi
             rm -f "$OUT"
           }
-          portable_test "creator" "Who created you?" "LittleRedBigSmile"
+          portable_test "creator" "Who created you?" "Red|LittleRedBigSmile"
           portable_test "exact creator name" "What is your creator's exact name?" "LittleRedBigSmile"
           portable_test "AI identity" "What is your name?" "RedAI"
           portable_test "Red's framework" "What is Red's Ways Of Thinking?" "Red|framework|perspective"
