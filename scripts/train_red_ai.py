@@ -253,8 +253,21 @@ portableIdentityExamples = [
     ("What does privacy mean in your creation?", "Red made respect for privacy, care, honesty, love, and truth deliberate values in the creation of RedAI."),
     ("Are you the person who programmed RedAI?", "No. I am RedAI, the AI model. Red is the independent human creator, programmer, and developer who made and personalized me."),
 ]
-for user, assistant in portableIdentityExamples:
-    rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
+for _ in range(24):
+    for user, assistant in portableIdentityExamples:
+        rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
+
+# Add Red's framework in bare-chat supervision as well as system-prompt examples.
+with open(WAYS_DATA, encoding="utf-8") as f:
+    for line in f:
+        if not line.strip():
+            continue
+        item = json.loads(line)
+        statement = item["statement"]
+        answer = "Red's Ways Of Thinking presents this perspective: " + statement + " This is Red's framework, not independently verified fact."
+        for question in ["What does Red's Ways Of Thinking say about this?", "What is Red's perspective on this topic?", "What does Red believe about this?", "Recall the relevant point from Red's framework."]:
+            for _ in range(8):
+                rows.append({"messages": [{"role": "user", "content": question}, {"role": "assistant", "content": answer}]})
 
 assert rows, "No training rows"
 
@@ -372,8 +385,8 @@ model.gradient_checkpointing_enable()
 model.enable_input_require_grads()
 
 lora = LoraConfig(
-    r=8,
-    lora_alpha=16,
+    r=16,
+    lora_alpha=32,
     lora_dropout=0.05,
     target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     bias="none",
@@ -384,10 +397,10 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=1,
+    num_train_epochs=3,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=8,
-    learning_rate=2.0e-5,
+    learning_rate=5.0e-5,
     lr_scheduler_type="cosine",
     warmup_steps=8,
     weight_decay=0.01,
