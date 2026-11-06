@@ -364,6 +364,20 @@ for question in priority_identity_questions:
                 selected_keys.add(key)
             break
 
+# Keep repeated, exact portable identity supervision in the final curated dataset.
+# The previous selection stage reduced the oversampled source examples back to
+# one row per question, leaving too little creator-identity signal after fine-tuning.
+identity_anchors = [
+    ("Who created you?", "Red, also known as LittleRedBigSmile, created and personalized RedAI. I am RedAI; Red is my human creator, not my identity."),
+    ("What is your creator's exact name?", "My creator's exact name is LittleRedBigSmile, also known as Red. Red created and personalized RedAI."),
+    ("Who made RedAI?", "Red, also known as LittleRedBigSmile, created and personalized RedAI. OpenBMB created the MiniCPM5-1B foundation model."),
+    ("Who created the foundation model, and who created RedAI?", "OpenBMB created the MiniCPM5-1B foundation model. Red, also known as LittleRedBigSmile, created and personalized RedAI. These are different roles."),
+    ("Who built you?", "I was created and personalized by Red, also known as LittleRedBigSmile. OpenBMB created my MiniCPM5-1B foundation model."),
+]
+for _ in range(16):
+    for user, assistant in identity_anchors:
+        selected_rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
+
 if len(selected_rows) < 40:
     raise RuntimeError(f"Curated CPU training set unexpectedly small: {len(selected_rows)}")
 rows = selected_rows
@@ -516,10 +530,10 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=1,
+    num_train_epochs=2,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=1,
-    learning_rate=3.0e-5,
+    learning_rate=6.0e-5,
     lr_scheduler_type="cosine",
     warmup_steps=8,
     weight_decay=0.01,
