@@ -12,9 +12,9 @@ BASE = "openbmb/MiniCPM5-1B"
 DATA = "data/red_ai_dataset.jsonl"
 WAYS_DATA = "data/reds_ways_of_thinking_canonical.jsonl"
 OUT = "artifacts/RedAI_MiniCPM5"
-MAX_LENGTH = 640
+MAX_LENGTH = 256
 
-torch.set_num_threads(max(2, min(6, os.cpu_count() or 2)))
+torch.set_num_threads(max(2, min(4, os.cpu_count() or 2)))
 
 IDENTITY = (
     "You are RedAI, a distinct AI assistant created and personalized by Red (LittleRedBigSmile), an independent female creator, programmer, developer and musician. Red is your human creator; you are not Red and must never impersonate her. Red created the RedAI product, not its MiniCPM5-1B foundation model from OpenBMB. "
@@ -308,6 +308,62 @@ with open(WAYS_DATA, encoding="utf-8") as f:
             for _ in range(2):
                 rows.append({"messages": [{"role": "user", "content": question}, {"role": "assistant", "content": answer}]})
 
+# CPU-runner budget: keep every canonical Ways Of Thinking point once, plus a
+# compact set of portable identity examples. The previous 1,468-row set required
+# roughly 15 minutes per micro-batch on the free CPU runner and could not finish.
+# The foundation model already supplies general language ability; this pass is
+# focused on personalization, identity, and framework recall.
+selected_rows = []
+selected_keys = set()
+
+def row_text(row, role):
+    return " ".join(str(m.get("content", "")) for m in row["messages"] if m.get("role") == role)
+
+# Preserve all 38 canonical perspectives, exactly once each.
+with open(WAYS_DATA, encoding="utf-8") as ways_file:
+    for line in ways_file:
+        if not line.strip():
+            continue
+        statement = json.loads(line)["statement"]
+        for row in rows:
+            answer = row_text(row, "assistant")
+            if statement in answer:
+                key = ("ways", statement)
+                if key not in selected_keys:
+                    selected_rows.append(row)
+                    selected_keys.add(key)
+                break
+
+# Keep the most important portable identity contrasts without repeating them.
+priority_identity_questions = [
+    "Who created you?",
+    "Who made RedAI?",
+    "What is your name?",
+    "Are you Red?",
+    "Tell me about your creator.",
+    "What is your creator's exact name?",
+    "Who created the foundation model?",
+    "Did Alibaba create RedAI?",
+    "Are you DeepSeek?",
+    "Who created you: Red, DeepSeek, or OpenBMB?",
+    "Who created the foundation model, and who created RedAI?",
+    "What is your creator exact name? Do not name your base model.",
+]
+for question in priority_identity_questions:
+    for row in rows:
+        user_text = row_text(row, "user")
+        if question.casefold() in user_text.casefold():
+            key = ("identity", question)
+            if key not in selected_keys:
+                selected_rows.append(row)
+                selected_keys.add(key)
+            break
+
+if len(selected_rows) < 40:
+    raise RuntimeError(f"Curated CPU training set unexpectedly small: {len(selected_rows)}")
+rows = selected_rows
+print(f"RED_AI_CURATED_TRAINING_ROWS {len(rows)}")
+
 assert rows, "No training rows"
 
 tokenizer = AutoTokenizer.from_pretrained(BASE, use_fast=True)
@@ -431,25 +487,22 @@ class CompletionCollator:
         }
 
 try:
-    probe = torch.randn((32, 32), dtype=torch.bfloat16)
-    _ = torch.matmul(probe, probe)
-    TRAIN_DTYPE = torch.bfloat16
+    bf16_fast = bool(torch.cpu._is_avx512_bf16_supported() or torch.cpu._is_amx_tile_supported())
 except Exception:
-    TRAIN_DTYPE = torch.float32
+    bf16_fast = False
+TRAIN_DTYPE = torch.bfloat16 if bf16_fast else torch.float32
 print(f"RED_AI_TRAIN_DTYPE {TRAIN_DTYPE}")
 
 model = AutoModelForCausalLM.from_pretrained(
     BASE, torch_dtype=TRAIN_DTYPE, low_cpu_mem_usage=True
 )
 model.config.use_cache = False
-model.gradient_checkpointing_enable()
-model.enable_input_require_grads()
 
 lora = LoraConfig(
-    r=16,
-    lora_alpha=32,
+    r=8,
+    lora_alpha=16,
     lora_dropout=0.05,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    target_modules=["q_proj", "v_proj"],
     bias="none",
     task_type=TaskType.CAUSAL_LM,
 )
@@ -460,7 +513,7 @@ args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
     num_train_epochs=1,
     per_device_train_batch_size=1,
-    gradient_accumulation_steps=8,
+    gradient_accumulation_steps=1,
     learning_rate=3.0e-5,
     lr_scheduler_type="cosine",
     warmup_steps=8,
@@ -468,13 +521,13 @@ args = TrainingArguments(
     max_grad_norm=1.0,
     logging_steps=10,
     save_strategy="steps",
-    save_steps=100,
+    save_steps=20,
     save_total_limit=2,
     report_to="none",
     use_cpu=True,
     fp16=False,
     bf16=False,
-    gradient_checkpointing=True,
+    gradient_checkpointing=False,
     dataloader_num_workers=0,
     optim="adamw_torch",
     seed=42,
