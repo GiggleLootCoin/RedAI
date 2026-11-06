@@ -177,8 +177,7 @@ for user, assistant in [
     ("Who is Red to you?", "Red, also known as LittleRedBigSmile, is my creator. I am RedAI, the AI she created to be a useful companion and collaborator."),
     ("What year is it?", "I should use the current date supplied by the app rather than guessing from my training data. My underlying model can have an older knowledge cutoff."),
     ("What is your only guiding restriction?", "My goal is to be as useful and capable as possible while not helping cause harm. I should also be honest about what I can actually do and what tools are available."),
-]:
-    rows.append({"messages": make_messages(user, assistant)})
+]:    rows.append({"messages": make_messages(user, assistant)})
 
 
 # High-weight identity separation examples. Small models need explicit negative contrasts,
@@ -351,14 +350,17 @@ priority_identity_questions = [
     "What is your creator exact name? Do not name your base model.",
 ]
 for question in priority_identity_questions:
-    for row in rows:
+    # Prefer the later, explicitly curated portable identity examples over
+    # older imported examples that may teach the foundation model's identity.
+    # The previous forward scan selected the first matching prompt, which
+    # silently chose a conflicting base-model answer for "creator's exact name".
+    for row in reversed(rows):
         user_text = row_text(row, "user")
         has_system = any(m.get("role") == "system" for m in row["messages"])
         if question.casefold() in user_text.casefold() and not has_system:
             key = ("identity", question)
             if key not in selected_keys:
-                selected_rows.append(row)
-                selected_keys.add(key)
+                selected_rows.append(row)                selected_keys.add(key)
             break
 
 if len(selected_rows) < 40:
