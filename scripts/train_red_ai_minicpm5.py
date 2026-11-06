@@ -327,7 +327,8 @@ with open(WAYS_DATA, encoding="utf-8") as ways_file:
         statement = json.loads(line)["statement"]
         for row in rows:
             answer = row_text(row, "assistant")
-            if statement in answer:
+            has_system = any(m.get("role") == "system" for m in row["messages"])
+            if statement in answer and not has_system:
                 key = ("ways", statement)
                 if key not in selected_keys:
                     selected_rows.append(row)
@@ -352,7 +353,8 @@ priority_identity_questions = [
 for question in priority_identity_questions:
     for row in rows:
         user_text = row_text(row, "user")
-        if question.casefold() in user_text.casefold():
+        has_system = any(m.get("role") == "system" for m in row["messages"])
+        if question.casefold() in user_text.casefold() and not has_system:
             key = ("identity", question)
             if key not in selected_keys:
                 selected_rows.append(row)
