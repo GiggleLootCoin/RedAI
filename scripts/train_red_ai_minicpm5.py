@@ -360,7 +360,8 @@ for question in priority_identity_questions:
         if question.casefold() in user_text.casefold() and not has_system:
             key = ("identity", question)
             if key not in selected_keys:
-                selected_rows.append(row)                selected_keys.add(key)
+                selected_rows.append(row)
+                selected_keys.add(key)
             break
 
 if len(selected_rows) < 40:
