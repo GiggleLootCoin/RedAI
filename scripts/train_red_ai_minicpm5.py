@@ -12,7 +12,7 @@ BASE = "openbmb/MiniCPM5-1B"
 DATA = "data/red_ai_dataset.jsonl"
 WAYS_DATA = "data/reds_ways_of_thinking_canonical.jsonl"
 OUT = "artifacts/RedAI_MiniCPM5"
-MAX_LENGTH = 256
+MAX_LENGTH = 512
 
 torch.set_num_threads(max(2, min(4, os.cpu_count() or 2)))
 
