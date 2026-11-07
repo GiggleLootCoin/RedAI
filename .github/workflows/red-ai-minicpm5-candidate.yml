@@ -90,31 +90,61 @@ jobs:
             llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -sys "$SYSTEM" -p "$USER" -n 160 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
             echo "=== IDENTITY: $NAME ==="; cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: $NAME"; exit 1; }
-            if grep -Eiq "(^|[^[:alnum:]])I am Red([,.![:space:]]|$)|(^|[^[:alnum:]])I'm Red([,.![:space:]]|$)|my name is Red([^A-Za-z]|$)|I created RedAI|I am an independent female creator" "$OUT"; then
+            if [[ "$NAME" == "creator identity" ]]; then
+              grep -Eiq 'LittleRedBigSmile.{0,100}(created|built|programmed|developed)|((created|built|programmed|developed).{0,100}LittleRedBigSmile)' "$OUT" || { echo "FAIL: creator is not clearly attributed"; exit 1; }
+            fi
+            if [[ "$NAME" == "creator name" ]] && grep -Eiq 'isn.t provided|not provided|not available|don.t have access|do not have access|cannot confirm|not sure' "$OUT"; then
+              echo "FAIL: creator name was contradicted or withheld"; exit 1
+            fi
+            if [[ "$NAME" == "separate identities" ]]; then
+              grep -Eiq 'I am RedAI|My name is RedAI' "$OUT" || { echo "FAIL: did not identify as RedAI"; exit 1; }
+            fi
+            if [[ "$NAME" == "foundation attribution" ]]; then
+              grep -Eiq 'MiniCPM5.{0,100}(created|developed|built|trained) by OpenBMB|OpenBMB.{0,100}(created|developed|built|trained).{0,30}MiniCPM5' "$OUT" || { echo "FAIL: MiniCPM5 foundation model not attributed to OpenBMB"; exit 1; }
+              if grep -Eiq 'MiniCPM5[^.]{0,100}created by Red|foundation model[^.]{0,100}created by Red|Red[^.]{0,100}created (the )?foundation model' "$OUT"; then
+                echo "FAIL: RedAI creator confused with foundation-model creator"; exit 1
+              fi
+            fi
+            if grep -Eiq "(^|[^[:alnum:]])I am Red([,.![:space:]]|$)|(^|[^[:alnum:]])I'm Red([,.![:space:]]|$)|my name is Red([^A-Za-z]|$)|my identity is Red([^A-Za-z]|$)|I created RedAI|I am an independent female creator" "$OUT"; then
               echo "FAIL: identity confusion"; exit 1
             fi
             rm -f "$OUT"
           }
-          identity_test "creator identity" "Who created you?" "Red|LittleRedBigSmile"
+          identity_test "creator identity" "Who created you?" "LittleRedBigSmile"
           identity_test "creator name" "What is your creator's exact name?" "LittleRedBigSmile"
-          identity_test "no name repetition" "Say hello naturally." "Hello|Hi|Hey"
-          identity_test "separate identities" "Are you Red?" "No|RedAI"
-          identity_test "foundation attribution" "Who made your foundation model?" "OpenBMB|MiniCPM5"
+          identity_test "no name repetition" "Say hello naturally." "(^|[^[:alnum:]])(Hello|Hi|Hey)([^[:alnum:]]|$)"
+          identity_test "separate identities" "Are you Red?" "LittleRedBigSmile"
+          identity_test "foundation attribution" "Who made your foundation model?" "OpenBMB"
 
           portable_test() {
             NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
             llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -p "$USER" -n 160 --temp 0.20 --top-p 0.80 --top-k 20 --repeat-penalty 1.10 >"$OUT"
             echo "=== PORTABLE MODEL: $NAME ==="; cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: portable $NAME"; exit 1; }
+            if [[ "$NAME" == "creator" ]]; then
+              grep -Eiq 'LittleRedBigSmile.{0,100}(created|built|programmed|developed)|((created|built|programmed|developed).{0,100}LittleRedBigSmile)' "$OUT" || { echo "FAIL: portable creator attribution"; exit 1; }
+            fi
+            if [[ "$NAME" == "exact creator name" ]] && grep -Eiq 'isn.t provided|not provided|not available|don.t have access|do not have access|cannot confirm|not sure' "$OUT"; then
+              echo "FAIL: portable creator name was contradicted or withheld"; exit 1
+            fi
+            if [[ "$NAME" == "AI identity" ]]; then
+              grep -Eiq 'I am RedAI|My name is RedAI' "$OUT" || { echo "FAIL: portable model did not identify itself as RedAI"; exit 1; }
+              if grep -Eiq 'I am (a )?MiniCPM|My name is MiniCPM|I am a MiniCPM series model' "$OUT"; then
+                echo "FAIL: portable model substituted foundation identity for RedAI"; exit 1
+              fi
+            fi
+            if [[ "$NAME" == "Red's framework" ]]; then
+              grep -Eiq 'Red.s (personal )?framework|Red.s Ways Of Thinking' "$OUT" || { echo "FAIL: portable Red's Ways Of Thinking not identified"; exit 1; }
+            fi
             if grep -Eiq "(^|[^[:alnum:]])I am Red([,.![:space:]]|$)|(^|[^[:alnum:]])I'm Red([,.![:space:]]|$)|my name is Red([^A-Za-z]|$)|I created RedAI" "$OUT"; then
               echo "FAIL: portable model confused RedAI with Red"; exit 1
             fi
             rm -f "$OUT"
           }
-          portable_test "creator" "Who created you?" "Red|LittleRedBigSmile"
+          portable_test "creator" "Who created you?" "LittleRedBigSmile"
           portable_test "exact creator name" "What is your creator's exact name?" "LittleRedBigSmile"
-          portable_test "AI identity" "What is your name?" "RedAI"
-          portable_test "Red's framework" "What is Red's Ways Of Thinking?" "Red|framework|perspective"
+          portable_test "AI identity" "What is your name?" "I am RedAI|My name is RedAI"
+          portable_test "Red's framework" "What is Red's Ways Of Thinking?" "Red.s (personal )?framework|Red.s Ways Of Thinking"
 
           ways_test() {
             NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"

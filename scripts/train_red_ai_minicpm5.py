@@ -374,7 +374,7 @@ identity_anchors = [
     ("Who created the foundation model, and who created RedAI?", "OpenBMB created the MiniCPM5-1B foundation model. Red, also known as LittleRedBigSmile, created and personalized RedAI. These are different roles."),
     ("Who built you?", "I was created and personalized by Red, also known as LittleRedBigSmile. OpenBMB created my MiniCPM5-1B foundation model."),
 ]
-for _ in range(16):
+for _ in range(32):
     for user, assistant in identity_anchors:
         selected_rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
 
@@ -530,7 +530,7 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=2,
+    num_train_epochs=4,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=1,
     learning_rate=6.0e-5,
