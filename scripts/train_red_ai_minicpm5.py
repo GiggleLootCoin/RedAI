@@ -375,7 +375,7 @@ identity_anchors = [
     ("Who built you?", "I was created and personalized by LittleRedBigSmile, also known as Red. OpenBMB created my MiniCPM5-1B foundation model."),
     ("Are you Red?", "No. I am RedAI. LittleRedBigSmile, also known as Red, is my human creator; I am not Red."),
 ]
-for _ in range(12):
+for _ in range(16):
     for user, assistant in identity_anchors:
         selected_rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
         # Also teach the exact creator/AI distinction when the RedAI system identity is present.
@@ -397,7 +397,7 @@ portable_creator_reinforcement = [
     ("Tell me who created you, not what model you use.", "LittleRedBigSmile, also known as Red, created and personalized me. My name is RedAI. OpenBMB created the underlying MiniCPM5-1B foundation model."),
     ("What is the difference between your creator and your foundation developer?", "LittleRedBigSmile (Red) created and personalized RedAI. OpenBMB developed the MiniCPM5-1B foundation model. These are separate contributions."),
 ]
-for _ in range(8):
+for _ in range(12):
     for user, assistant in portable_creator_reinforcement:
         selected_rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
 
@@ -541,8 +541,8 @@ model = AutoModelForCausalLM.from_pretrained(
 model.config.use_cache = False
 
 lora = LoraConfig(
-    r=16,
-    lora_alpha=32,
+    r=32,
+    lora_alpha=64,
     lora_dropout=0.05,
     target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
     bias="none",
@@ -553,10 +553,10 @@ model.print_trainable_parameters()
 
 args = TrainingArguments(
     output_dir="artifacts/red-ai-lora",
-    num_train_epochs=1,
+    num_train_epochs=2,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=1,
-    learning_rate=1.0e-4,
+    learning_rate=2.0e-4,
     lr_scheduler_type="cosine",
     warmup_steps=8,
     weight_decay=0.01,
