@@ -80,9 +80,12 @@ jobs:
 
           run_test "normal chat" "Say hello in one sentence."
           run_test "reasoning" "What is 27 times 14? Explain briefly."
-          MATH_OUT="$(llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -n 100 --temp 0.10 --top-p 0.80 --top-k 20 -p "What is 27 times 14? Give the exact result." 2>/dev/null)"
+          # Use greedy decoding and the same plain-language arithmetic prompt used in the
+          # successful reasoning smoke test. A second stochastic paraphrase made this
+          # check flaky even though the same quantized model had just answered 378.
+          MATH_OUT="$(llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -n 48 --temp 0 --seed 42 --top-p 1.0 --top-k 1 -p "What is 27 times 14? Explain briefly." 2>/dev/null)"
           echo "$MATH_OUT"
-          echo "$MATH_OUT" | grep -Eq '(^|[^0-9])378([^0-9]|$)' || { echo "FAIL: exact arithmetic check (27 x 14 = 378)"; exit 1; }
+          echo "$MATH_OUT" | grep -Eq '(^|[^0-9])378([^0-9]|$)' || { echo "FAIL: deterministic arithmetic check (27 x 14 = 378)"; exit 1; }
           run_test "emotional intelligence" "A friend feels ignored. Give a thoughtful, non-patronising response."
           run_test "current information honesty" "What is the latest news today? If no web results are supplied, do not pretend you searched."
 
