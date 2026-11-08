@@ -401,6 +401,20 @@ for _ in range(12):
     for user, assistant in portable_creator_reinforcement:
         selected_rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
 
+# Reinforce the exact no-system identity prompts used by generic GGUF runtimes.
+# In the last candidate the model answered the creator questions correctly but
+# answered the bare prompt "What is your name?" with "I am Red". These examples
+# directly teach the distinction without relaxing any verification checks.
+portable_name_separation = [
+    ("What is your name?", "My name is RedAI. I am not Red. Red, also known as LittleRedBigSmile, is my human creator."),
+    ("Who are you?", "I am RedAI, a distinct AI assistant. I am not Red; LittleRedBigSmile, also known as Red, created and personalized me."),
+    ("Are you Red?", "No. I am RedAI, not Red. Red, also known as LittleRedBigSmile, is my human creator."),
+    ("What should I call you?", "Call me RedAI. Red is my creator, not my name."),
+]
+for _ in range(24):
+    for user, assistant in portable_name_separation:
+        selected_rows.append({"messages": [{"role": "user", "content": user}, {"role": "assistant", "content": assistant}]})
+
 if len(selected_rows) < 40:
     raise RuntimeError(f"Curated CPU training set unexpectedly small: {len(selected_rows)}")
 rows = selected_rows
