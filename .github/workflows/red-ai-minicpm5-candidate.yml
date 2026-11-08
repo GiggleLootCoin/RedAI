@@ -254,16 +254,16 @@ jobs:
       - name: Write checksum and candidate README
         run: |
           test -s RedAI-MiniCPM5-System-Prompt.txt
-          grep -q "Canonical statements from Red's Ways Of Thinking" RedAI-MiniCP5-System-Prompt.txt
-          sha256sum RedAI-MiniCP5-1B-Q4_K_M.gguf > RedAI-MiniCP5-1B-Q4_K_M.gguf.sha256
+          grep -q "Canonical statements from Red's Ways Of Thinking" RedAI-MiniCPM5-System-Prompt.txt
+          sha256sum RedAI-MiniCPM5-1B-Q4_K_M.gguf > RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
           sha256sum -c RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
-          cat > RedAI-MiniCP5-README.txt <<'EOF'
+          cat > RedAI-MiniCPM5-README.txt <<'EOF'
           REDAI MINICPM5-1B CANDIDATE
           Foundation: MiniCPM5-1B by OpenBMB
           Personalization: Red's Ways Of Thinking and RedAI identity
           Format: GGUF Q4_K_M
           Chat mode: Recommended setting is no-think. In llama.cpp-based runtimes, set chat-template kwargs enable_thinking=false and disable reasoning if the UI exposes those controls.
-          Important: load the accompanying RedAI-MiniCP5-System-Prompt.txt in the runtime for the complete identity, privacy, honesty and 38-point framework reference.
+          Important: load the accompanying RedAI-MiniCPM5-System-Prompt.txt in the runtime for the complete identity, privacy, honesty and 38-point framework reference.
           Candidate build: separate from the current RedAI latest release
           The candidate must still be tested on target Android hardware before replacing the current recommended model.
           Verify with the accompanying SHA-256 file.
