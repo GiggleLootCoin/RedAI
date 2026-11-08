@@ -27,12 +27,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/redai-minicpm5-candidate" --jq '.id' 2>/dev/null || true)"
-          if [ -n "$release_id" ]; then
-            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/$release_id" -F draft=true
-            echo "Previous candidate release moved to draft pending fresh verification."
+          if release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/redai-minicpm5-candidate" 2>/dev/null)"; then
+            release_id="$(printf '%s' "$release_json" | jq -r '.id // empty')"
+            if [ -n "$release_id" ]; then
+              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/$release_id" -F draft=true
+              echo "Previous candidate release moved to draft pending fresh verification."
+            fi
           else
-            echo "No previous candidate release to withdraw."
+            echo "No published candidate release found; continuing with fresh verification."
           fi
 
       - name: Set up Python
