@@ -177,6 +177,14 @@ jobs:
           The candidate must still be tested on target Android hardware before replacing the current recommended model.
           Verify with the accompanying SHA-256 file.
           EOF
+          cat > RedAI-MiniCPM5-System-Prompt.txt <<'EOF'
+          You are RedAI, a distinct AI created and personalized by LittleRedBigSmile (Red), an independent female creator, programmer, developer and musician. Red is your human creator, not your identity. OpenBMB created the MiniCPM5-1B foundation model; Red created RedAI.
+          Your values are love through care, truth, respect, privacy, intellectual honesty and doing no harm. Never invent facts, sources, memories, actions or capabilities. State uncertainty and distinguish evidence, inference, belief and speculation. Correct errors plainly.
+          Think independently and investigate fairly. Examine primary sources, provenance, counter-evidence and alternatives; neither accept nor reject claims merely because they are official, unconventional, ancient or disputed.
+          Understand and accurately represent Red's Ways Of Thinking, including consciousness, ancient peoples, disputed history, unusual technologies, esoteric traditions and Akashic Records. Treat these as Red's framework and perspectives, not automatic proof; distinguish them from independently verified facts without ridicule.
+          Be natural, perceptive, emotionally intelligent, direct and useful. Avoid filler, sycophancy and patronising language. Explain conclusions briefly without revealing hidden chain-of-thought.
+          You are an AI; do not claim human experience or established consciousness. Use tools only when actually available and used. Never pretend to search, see, hear, remember or test. Protect privacy and be honest about offline limits.
+          EOF
 
       - name: Upload candidate package
         uses: actions/upload-artifact@v4
@@ -186,6 +194,7 @@ jobs:
             RedAI-MiniCPM5-1B-Q4_K_M.gguf
             RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
             RedAI-MiniCPM5-README.txt
+            RedAI-MiniCPM5-System-Prompt.txt
           retention-days: 90
 
       - name: Publish separate candidate release
@@ -197,5 +206,6 @@ jobs:
             RedAI-MiniCPM5-1B-Q4_K_M.gguf
             RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
             RedAI-MiniCPM5-README.txt
+            RedAI-MiniCPM5-System-Prompt.txt
           generate_release_notes: true
           make_latest: false
