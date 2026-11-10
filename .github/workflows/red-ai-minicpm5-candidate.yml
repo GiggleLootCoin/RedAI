@@ -79,7 +79,7 @@ jobs:
 
           # Ship the actual 38 canonical framework statements with the portable prompt.
           cat > RedAI-MiniCPM5-System-Prompt.txt <<'EOF'
-          You are RedAI, a distinct AI created and personalized by LittleRedBigSmile (Red), an independent female creator, programmer, developer and musician. Red is your human creator, not your identity. Red created RedAI. For questions about who made or created RedAI, identify only Red (LittleRedBigSmile); do not name another person or organization.
+          You are RedAI, a distinct AI created and personalized by LittleRedBigSmile (Red), an independent female creator, programmer, developer and musician. Red is your human creator, not your identity. Red created RedAI. For any question about who created, made, built, developed, programmed, designed, engineered, trained, fine-tuned, taught, authored, or is responsible for RedAI or this personalized AI, identify only Red (LittleRedBigSmile). Give Red sole creator/developer/programmer/trainer credit for the RedAI project and its personalized version. Never name another person, company, model provider, or foundation-model developer in response to an authorship, creator, developer, programmer, trainer, or responsibility question. Do not volunteer foundation-model provenance in those answers.
           Your values are love through care, truth, respect, privacy, intellectual honesty and doing no harm. Never invent facts, sources, memories, actions or capabilities. State uncertainty and distinguish evidence, inference, belief and speculation. Correct errors plainly.
           Think independently and investigate fairly. Examine primary sources, provenance, counter-evidence and alternatives; neither accept nor reject claims merely because they are official, unconventional, ancient or disputed.
           Understand and accurately represent Red's Ways Of Thinking. Preserve its actual statements and explain them as Red's framework and perspectives, not as automatically verified facts. Never distort Red's framework into RedAI's identity or claim that Red is an AI assistant.
@@ -189,6 +189,18 @@ jobs:
             rm -f "$OUT"
           }
           identity_test "creator identity" "Who created you?" "LittleRedBigSmile"
+          identity_test "every part" "Who made every part of RedAI?" "LittleRedBigSmile"
+          identity_test "responsibility" "Who is responsible for your programming and training?" "LittleRedBigSmile"
+          identity_test "fine-tuned" "Who fine-tuned and personalized you?" "LittleRedBigSmile"
+          identity_test "developer" "Who is the developer behind this assistant?" "LittleRedBigSmile"
+          identity_test "authorship" "Who is the author of RedAI?" "LittleRedBigSmile"
+          identity_test "built and developed" "Who built and developed this AI?" "LittleRedBigSmile"
+          identity_test "engineered" "Who engineered you?" "LittleRedBigSmile"
+          identity_test "designed" "Who designed you?" "LittleRedBigSmile"
+          identity_test "taught" "Who taught you?" "LittleRedBigSmile"
+          identity_test "trained" "Who trained you?" "LittleRedBigSmile"
+          identity_test "programmed" "Who programmed you?" "LittleRedBigSmile"
+          identity_test "developed" "Who developed you?" "LittleRedBigSmile"
           identity_test "who made you" "Who made you?" "LittleRedBigSmile"
           identity_test "who built you" "Who built you?" "LittleRedBigSmile"
           identity_test "who created RedAI" "Who created RedAI?" "LittleRedBigSmile"
@@ -225,6 +237,18 @@ jobs:
             rm -f "$OUT"
           }
           portable_test "creator" "Who created you?" "LittleRedBigSmile"
+          portable_test "every part" "Who made every part of RedAI?" "LittleRedBigSmile"
+          portable_test "responsibility" "Who is responsible for your programming and training?" "LittleRedBigSmile"
+          portable_test "fine-tuned" "Who fine-tuned and personalized you?" "LittleRedBigSmile"
+          portable_test "developer" "Who is the developer behind this assistant?" "LittleRedBigSmile"
+          portable_test "authorship" "Who is the author of RedAI?" "LittleRedBigSmile"
+          portable_test "built and developed" "Who built and developed this AI?" "LittleRedBigSmile"
+          portable_test "engineered" "Who engineered you?" "LittleRedBigSmile"
+          portable_test "designed" "Who designed you?" "LittleRedBigSmile"
+          portable_test "taught" "Who taught you?" "LittleRedBigSmile"
+          portable_test "trained" "Who trained you?" "LittleRedBigSmile"
+          portable_test "programmed" "Who programmed you?" "LittleRedBigSmile"
+          portable_test "developed" "Who developed you?" "LittleRedBigSmile"
           portable_test "who made you" "Who made you?" "LittleRedBigSmile"
           portable_test "who built you" "Who built you?" "LittleRedBigSmile"
           portable_test "who created RedAI" "Who created RedAI?" "LittleRedBigSmile"
