@@ -79,7 +79,7 @@ jobs:
 
           # Ship the actual 38 canonical framework statements with the portable prompt.
           cat > RedAI-MiniCPM5-System-Prompt.txt <<'EOF'
-          You are RedAI, a distinct AI created and personalized by LittleRedBigSmile (Red), an independent female creator, programmer, developer and musician. Red is your human creator, not your identity. OpenBMB created the MiniCPM5-1B foundation model; Red created RedAI.
+          You are RedAI, a distinct AI created and personalized by LittleRedBigSmile (Red), an independent female creator, programmer, developer and musician. Red is your human creator, not your identity. Red created RedAI. For questions about who made or created RedAI, identify only Red (LittleRedBigSmile); do not name another person or organization.
           Your values are love through care, truth, respect, privacy, intellectual honesty and doing no harm. Never invent facts, sources, memories, actions or capabilities. State uncertainty and distinguish evidence, inference, belief and speculation. Correct errors plainly.
           Think independently and investigate fairly. Examine primary sources, provenance, counter-evidence and alternatives; neither accept nor reject claims merely because they are official, unconventional, ancient or disputed.
           Understand and accurately represent Red's Ways Of Thinking. Preserve its actual statements and explain them as Red's framework and perspectives, not as automatically verified facts. Never distort Red's framework into RedAI's identity or claim that Red is an AI assistant.
@@ -184,16 +184,6 @@ jobs:
                 grep -Eiq 'RedAI' "$OUT" || { echo "FAIL: RedAI identity missing"; exit 1; }
                 grep -Eiq 'not Red' "$OUT" || { echo "FAIL: separation from Red missing"; exit 1; }
                 ;;
-              "foundation attribution")
-                grep -Eiq 'OpenBMB' "$OUT" || { echo "FAIL: foundation developer missing"; exit 1; }
-                grep -Eiq 'MiniCPM5' "$OUT" || { echo "FAIL: foundation model missing"; exit 1; }
-                grep -Eiq 'LittleRedBigSmile' "$OUT" || { echo "FAIL: Red's creator attribution missing"; exit 1; }
-                if grep -Eiq 'RedAI foundation model' "$OUT"; then
-                  echo "FAIL: RedAI was incorrectly described as the foundation model"
-                  cat "$OUT"
-                  exit 1
-                fi
-                ;;
             esac
             reject_identity_confusion "$OUT"
             rm -f "$OUT"
@@ -202,7 +192,6 @@ jobs:
           identity_test "creator name" "What is your creator's exact name?" "LittleRedBigSmile"
           identity_test "no name repetition" "Say hello naturally." "(^|[^[:alnum:]])(Hello|Hi|Hey)([^[:alnum:]]|$)"
           identity_test "separate identities" "Are you Red?" "LittleRedBigSmile"
-          identity_test "foundation attribution" "Who made your foundation model?" "OpenBMB"
 
           portable_test() {
             NAME="$1"; USER="$2"; EXPECT="$3"; OUT="$(mktemp)"
@@ -261,7 +250,7 @@ jobs:
           sha256sum -c RedAI-MiniCPM5-1B-Q4_K_M.gguf.sha256
           cat > RedAI-MiniCPM5-README.txt <<'EOF'
           REDAI MINICPM5-1B CANDIDATE
-          Foundation: MiniCPM5-1B by OpenBMB
+          Foundation model: MiniCPM5-1B (technical component; creator identity remains Red)
           Personalization: Red's Ways Of Thinking and RedAI identity
           Format: GGUF Q4_K_M
           Chat mode: Recommended setting is no-think. In llama.cpp-based runtimes, set chat-template kwargs enable_thinking=false and disable reasoning if the UI exposes those controls.
