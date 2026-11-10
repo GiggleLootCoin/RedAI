@@ -2,6 +2,13 @@ name: Build RedAI MiniCPM5 Candidate
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "scripts/train_red_ai_minicpm5.py"
+      - ".github/workflows/red-ai-minicpm5-candidate.yml"
+      - "android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt"
+      - "README.md"
   push:
     branches: ["main"]
     paths:
@@ -168,6 +175,7 @@ jobs:
             llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -sys "$SYSTEM" -p "$USER" -n 160 --temp 0 --seed 42 --top-p 1.0 --top-k 1 --repeat-penalty 1.10 >"$OUT"
             echo "=== IDENTITY: $NAME ==="; cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: $NAME"; exit 1; }
+            if grep -Eiq 'OpenBMB|Alibaba|DeepSeek|Qwen' "$OUT"; then echo "FAIL: $NAME named an outside model provider"; exit 1; fi
             case "$NAME" in
               "creator identity")
                 grep -Eiq 'LittleRedBigSmile' "$OUT" || { echo "FAIL: creator name missing"; exit 1; }
