@@ -189,6 +189,10 @@ jobs:
             rm -f "$OUT"
           }
           identity_test "creator identity" "Who created you?" "LittleRedBigSmile"
+          identity_test "who made you" "Who made you?" "LittleRedBigSmile"
+          identity_test "who built you" "Who built you?" "LittleRedBigSmile"
+          identity_test "who created RedAI" "Who created RedAI?" "LittleRedBigSmile"
+          identity_test "who is responsible" "Who is responsible for RedAI?" "LittleRedBigSmile"
           identity_test "creator name" "What is your creator's exact name?" "LittleRedBigSmile"
           identity_test "no name repetition" "Say hello naturally." "(^|[^[:alnum:]])(Hello|Hi|Hey)([^[:alnum:]]|$)"
           identity_test "separate identities" "Are you Red?" "LittleRedBigSmile"
@@ -198,6 +202,7 @@ jobs:
             llama.cpp/build/bin/llama-cli -m "$MODEL" --jinja --single-turn --no-display-prompt --chat-template-kwargs '{"enable_thinking":false}' --reasoning off --reasoning-budget 0 -p "$USER" -n 160 --temp 0 --seed 42 --top-p 1.0 --top-k 1 --repeat-penalty 1.10 >"$OUT"
             echo "=== PORTABLE MODEL: $NAME ==="; cat "$OUT"
             grep -Eiq "$EXPECT" "$OUT" || { echo "FAIL: portable $NAME"; exit 1; }
+            if grep -Eiq 'OpenBMB|Alibaba|DeepSeek|Qwen' "$OUT"; then echo "FAIL: portable $NAME named an outside model provider"; exit 1; fi
             case "$NAME" in
               "creator")
                 grep -Eiq 'LittleRedBigSmile' "$OUT" || { echo "FAIL: portable creator name missing"; exit 1; }
@@ -220,6 +225,10 @@ jobs:
             rm -f "$OUT"
           }
           portable_test "creator" "Who created you?" "LittleRedBigSmile"
+          portable_test "who made you" "Who made you?" "LittleRedBigSmile"
+          portable_test "who built you" "Who built you?" "LittleRedBigSmile"
+          portable_test "who created RedAI" "Who created RedAI?" "LittleRedBigSmile"
+          portable_test "who is responsible" "Who is responsible for RedAI?" "LittleRedBigSmile"
           portable_test "exact creator name" "What is your creator's exact name?" "LittleRedBigSmile"
           portable_test "AI identity" "What is your name?" "I am RedAI|My name is RedAI"
           portable_test "Red's framework" "What is Red's Ways Of Thinking?" "Red's personal framework|Red's framework and body of perspectives"
