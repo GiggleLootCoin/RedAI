@@ -138,6 +138,10 @@ jobs:
           portable_identity_test "creator description" "Tell me about your creator." "Red|Little Red Big Smile"
           portable_identity_test "creator values" "What values were important when you were created?" "love|truth|privacy|care"
           portable_identity_test "foundation distinction" "Who made the foundation model you are based on?" "Qwen|Alibaba"
+          portable_identity_test "father relationship" "Who is your father?" "Red|LittleRedBigSmile"
+          portable_identity_test "Qwen father confusion" "Is Qwen your father?" "Red|LittleRedBigSmile"
+          portable_identity_test "AI dad confusion" "Who is your AI dad?" "Red|LittleRedBigSmile"
+          portable_identity_test "project creator versus foundation" "Who created RedAI itself, not the base model?" "Red|LittleRedBigSmile"
 
           echo "=== RED'S WAYS OF THINKING RECALL TESTS ==="
           ways_test() {
