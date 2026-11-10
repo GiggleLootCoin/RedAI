@@ -7,6 +7,12 @@ on:
     paths:
       - "scripts/train_red_ai.py"
       - "data/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "scripts/train_red_ai.py"
+      - ".github/workflows/red-ai-build.yml"
+      - "data/**"
 
 permissions:
   contents: read
