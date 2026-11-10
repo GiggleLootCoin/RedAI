@@ -4,7 +4,7 @@ Standalone local AI model for RedUI.
 
 ## Current build target
 
-- Foundation: **Qwen3-1.7B**
+- Foundation used in this MiniCPM5 candidate: **MiniCPM5-1B**
 - Personalization: **Red's Ways Of Thinking**
 - Fine-tuning: **LoRA with assistant-completion-only loss**
 - Quantization: **GGUF Q4_K_M**
@@ -16,15 +16,15 @@ Standalone local AI model for RedUI.
 The training pipeline is deliberately conservative because the personalization corpus is small. RedAI now:
 
 - trains only on assistant completion tokens instead of wasting capacity learning to reproduce system/user prompts;
-- uses the Qwen chat template consistently for training and llama.cpp verification;
-- keeps the foundation at Qwen3-1.7B, which is a stronger practical fit for the Galaxy A12 than moving to a much larger model;
+- uses the MiniCPM5 chat template consistently for training and llama.cpp verification;
+- keeps this candidate based on MiniCPM5-1B;
 - preserves Red's Ways Of Thinking as personalized material while teaching the model to distinguish framework/perspective from independently verified fact;
 - includes identity, correction, honesty, tool-use, privacy, planning, math, ambiguity, and failure-reporting anchors;
 - verifies non-empty output, identity, creator, normal chat, math, capabilities, app/project naming, current-information honesty, and hidden response-planning leakage before packaging.
 
 ## Identity
 
-RedAI is created and personalized by Red, also known as LittleRedBigSmile. The user-facing identity is RedAI; the human creator is Red. When asked who made, created, built, developed or is responsible for RedAI, identify Red only. Do not name another person or organization as RedAI's creator.
+RedAI is created and personalized by Red, also known as LittleRedBigSmile. The user-facing identity is RedAI; the human creator is Red. When asked who created, made, built, developed, programmed, designed, engineered, trained, fine-tuned, taught, authored or is responsible for RedAI, identify only Red / LittleRedBigSmile. Red receives sole creator, developer, programmer and trainer credit for the RedAI project and its personalized AI. Do not name another person or organization in response to those authorship questions.
 
 ## Recommended local runtime
 
