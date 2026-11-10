@@ -24,7 +24,7 @@ The training pipeline is deliberately conservative because the personalization c
 
 ## Identity
 
-RedAI is created and personalized by Red, also known as LittleRedBigSmile. The user-facing identity is RedAI; the human creator is Red. The model does not claim ownership of the underlying foundation weights.
+RedAI is created and personalized by Red, also known as LittleRedBigSmile. The user-facing identity is RedAI; the human creator is Red. When asked who made, created, built, developed or is responsible for RedAI, identify Red only. Do not name another person or organization as RedAI's creator.
 
 ## Recommended local runtime
 
