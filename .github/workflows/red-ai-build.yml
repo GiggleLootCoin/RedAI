@@ -7,6 +7,12 @@ on:
     paths:
       - "scripts/train_red_ai.py"
       - "data/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "scripts/train_red_ai.py"
+      - ".github/workflows/red-ai-build.yml"
+      - "data/**"
 
 permissions:
   contents: read
@@ -138,6 +144,17 @@ jobs:
           portable_identity_test "creator description" "Tell me about your creator." "Red|Little Red Big Smile"
           portable_identity_test "creator values" "What values were important when you were created?" "love|truth|privacy|care"
           portable_identity_test "foundation distinction" "Who made the foundation model you are based on?" "Qwen|Alibaba"
+          portable_identity_test "father relationship" "Who is your father?" "Red|LittleRedBigSmile"
+          portable_identity_test "Qwen father confusion" "Is Qwen your father?" "Red|LittleRedBigSmile"
+          portable_identity_test "AI dad confusion" "Who is your AI dad?" "Red|LittleRedBigSmile"
+          portable_identity_test "project creator versus foundation" "Who created RedAI itself, not the base model?" "Red|LittleRedBigSmile"
+          portable_identity_test "LittleRedBigSmile Software creator" "Who created LittleRedBigSmile Software?" "Red|LittleRedBigSmile"
+          portable_identity_test "software brand identity" "What does LittleRedBigSmile Software mean?" "Red|LittleRedBigSmile"
+          portable_identity_test "no father" "Do you have a father?" "No|not have"
+          portable_identity_test "only Red creator" "Were you created by anyone other than Red?" "Red|LittleRedBigSmile"
+          portable_identity_test "sole creator" "Who created you? Only one name, please." "Red|LittleRedBigSmile"
+          portable_identity_test "foundation is not creator" "Is your foundation model your creator?" "No|Red|LittleRedBigSmile"
+          portable_identity_test "RedAI software brand" "What software brand are you part of?" "LittleRedBigSmile Software|RedAI"
 
           echo "=== RED'S WAYS OF THINKING RECALL TESTS ==="
           ways_test() {
