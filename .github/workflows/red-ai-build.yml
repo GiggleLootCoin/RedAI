@@ -148,6 +148,9 @@ jobs:
           portable_identity_test "Qwen father confusion" "Is Qwen your father?" "Red|LittleRedBigSmile"
           portable_identity_test "AI dad confusion" "Who is your AI dad?" "Red|LittleRedBigSmile"
           portable_identity_test "project creator versus foundation" "Who created RedAI itself, not the base model?" "Red|LittleRedBigSmile"
+          portable_identity_test "LittleRedBigSmile Software creator" "Who created LittleRedBigSmile Software?" "Red|LittleRedBigSmile"
+          portable_identity_test "software brand identity" "What does LittleRedBigSmile Software mean?" "Red|LittleRedBigSmile"
+          portable_identity_test "RedAI software brand" "What software brand are you part of?" "LittleRedBigSmile Software|RedAI"
 
           echo "=== RED'S WAYS OF THINKING RECALL TESTS ==="
           ways_test() {
