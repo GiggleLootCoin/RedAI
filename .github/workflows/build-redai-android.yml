@@ -50,6 +50,22 @@ jobs:
           print(f"Verified {model.stat().st_size:,}-byte Qwen3.5-0.8B GGUF and {len(rows)} canonical framework statements.")
           PY
 
+      - name: Smoke-test the exact bundled GGUF with the app's llama.cpp version
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch b9878 https://github.com/ggml-org/llama.cpp.git /tmp/llama.cpp
+          cmake -S /tmp/llama.cpp -B /tmp/llama.cpp/build -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF
+          cmake --build /tmp/llama.cpp/build --config Release -j2 --target llama-cli
+          OUT="$(mktemp)"
+          /tmp/llama.cpp/build/bin/llama-cli \
+            -m android-ui/app/src/main/assets/RedAI.gguf \
+            --jinja --single-turn --no-display-prompt \
+            -n 48 --temp 0.1 --top-p 0.8 --top-k 20 \
+            -p "Say hello in one clear sentence. /no_think" > "$OUT"
+          cat "$OUT"
+          grep -Eq '[[:alnum:]]' "$OUT"
+          rm -f "$OUT"
+
       - name: Install Gradle
         run: |
           curl -fsSL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
