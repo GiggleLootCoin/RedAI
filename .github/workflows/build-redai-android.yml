@@ -165,17 +165,17 @@ jobs:
 
       - name: Publish GitHub release
         if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          TAG="redai-android-v4"
-          APK="android-ui/app/build/outputs/apk/debug/app-debug.apk"
-          TITLE="RedAI Android v4 — Bundled Qwen3.5"
-          NOTES="RedAI Android with bundled Qwen3.5-0.8B Q4_K_M GGUF, automatic first-launch local model setup, Red's 38 canonical Ways Of Thinking statements in the system context, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations, and ARM64 llama.cpp runtime. The foundation model is Qwen; Red created and personalized the RedAI product."
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --latest
-          else
-            gh release create "$TAG" --title "$TITLE" --notes "$NOTES" --latest
-          fi
-          gh release upload "$TAG" "$APK" --clobber
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: redai-android-v4
+          target_commitish: ${{ github.sha }}
+          name: RedAI Android v4 — Bundled Qwen3.5
+          body: |
+            RedAI Android 4.0 with the bundled Qwen3.5-0.8B Q4_K_M GGUF, automatic first-launch local model setup, Red's 38 canonical Ways Of Thinking statements in the system context, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations, and ARM64 llama.cpp runtime.
+
+            The foundation weights are Qwen's; Red created and personalized the RedAI product and assistant identity.
+          files: |
+            android-ui/app/build/outputs/apk/debug/app-debug.apk
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          make_latest: true
