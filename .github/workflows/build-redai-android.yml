@@ -47,6 +47,8 @@ jobs:
           Path("android-ui/app/src/main/assets/reds_ways_of_thinking_canonical.jsonl").write_text(
               source.read_text(encoding="utf-8"), encoding="utf-8"
           )
+          notice = Path("android-ui/app/src/main/assets/RED AI MODEL NOTICE.txt").read_text(encoding="utf-8")
+          assert "Apache License 2.0" in notice and "Qwen3.5-0.8B" in notice
           print(f"Verified {model.stat().st_size:,}-byte Qwen3.5-0.8B GGUF and {len(rows)} canonical framework statements.")
           PY
 
@@ -98,6 +100,7 @@ jobs:
           unzip -l "$APK" | grep -q "classes.dex"
           unzip -l "$APK" | grep -q "assets/RedAI.gguf"
           unzip -l "$APK" | grep -q "assets/reds_ways_of_thinking_canonical.jsonl"
+          unzip -l "$APK" | grep -q "assets/RED AI MODEL NOTICE.txt"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama.so"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama_jni.so"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libggml-cpu.so"
@@ -139,6 +142,9 @@ jobs:
               ways_name = next(n for n in z.namelist() if n.endswith("/assets/reds_ways_of_thinking_canonical.jsonl"))
               rows = [json.loads(line) for line in z.read(ways_name).decode().splitlines() if line.strip()]
               assert len(rows) == 38, f"Expected 38 framework statements, got {len(rows)}"
+              notice_name = next(n for n in z.namelist() if n.endswith("/assets/RED AI MODEL NOTICE.txt"))
+              notice = z.read(notice_name).decode()
+              assert "Apache License 2.0" in notice and "Qwen3.5-0.8B" in notice
           print("Verified the exact bundled GGUF checksum and all 38 canonical framework statements inside the APK.")
           PY
           echo "RedAI runtime, bundled brain, first-launch bootstrap, framework context, creator identity and offline-search checks passed."
