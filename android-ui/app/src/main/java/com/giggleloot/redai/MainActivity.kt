@@ -184,12 +184,37 @@ class MainActivity : ComponentActivity() {
     private suspend fun copyModel(uri: Uri): File? = withContext(Dispatchers.IO) {
         runCatching {
             val dir = File(getExternalFilesDir("models"), "").apply { mkdirs() }
-            val out = File(dir, "RedAI.gguf")
-            contentResolver.openInputStream(uri)?.use { input ->
-                out.outputStream().use { output -> input.copyTo(output, 1024 * 1024) }
+            val temporary = File(dir, "RedAI.gguf.part")
+            val destination = File(dir, "RedAI.gguf")
+            if (temporary.exists()) temporary.delete()
+            val copied = contentResolver.openInputStream(uri)?.use { input ->
+                temporary.outputStream().use { output -> input.copyTo(output, 1024 * 1024) }
             } ?: return@runCatching null
-            out
-        }.getOrNull()
+            if (copied < 1024 * 1024) {
+                temporary.delete()
+                throw IllegalArgumentException("The selected file is too small to be a GGUF model.")
+            }
+            val magic = ByteArray(4)
+            val validMagic = temporary.inputStream().use { stream ->
+                stream.read(magic) == 4 && magic.contentEquals(byteArrayOf(0x47, 0x47, 0x55, 0x46))
+            }
+            if (!validMagic) {
+                temporary.delete()
+                throw IllegalArgumentException("That file is not a valid GGUF file. Select the RedAI .gguf model.")
+            }
+            if (destination.exists() && !destination.delete()) {
+                temporary.delete()
+                throw IllegalStateException("Could not replace the previous model file.")
+            }
+            if (!temporary.renameTo(destination)) {
+                temporary.copyTo(destination, overwrite = true)
+                temporary.delete()
+            }
+            destination
+        }.getOrElse { error ->
+            render("Model import failed: " + (error.message ?: "could not read the selected file"))
+            null
+        }
     }
 
     private suspend fun autoLoadSavedModel() {
