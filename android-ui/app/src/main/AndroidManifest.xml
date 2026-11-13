@@ -6,6 +6,8 @@
     <application
         android:theme="@style/Theme.RedAI"
         android:label="RedAI"
+        android:icon="@drawable/ic_redai_launcher"
+        android:roundIcon="@drawable/ic_redai_launcher"
         android:allowBackup="false"
         android:supportsRtl="true">
         <activity

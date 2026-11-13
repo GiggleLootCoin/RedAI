@@ -1,0 +1,12 @@
+REDAI MODEL NOTICE
+
+Product: RedAI — created and personalized by Red (LittleRedBigSmile).
+Foundation model: Qwen3.5-0.8B.
+Model format: GGUF, Q4_K_M quantization.
+Model file in this APK: RedAI.gguf
+Source repository: https://huggingface.co/lmstudio-community/Qwen3.5-0.8B-GGUF
+Source file: Qwen3.5-0.8B-Q4_K_M.gguf
+Source license: Apache License 2.0.
+SHA-256: f5b14da98939b60bbe1019a964eba656407e1e0b64f1fe3003ff6d650e93bfec
+
+The underlying Qwen foundation weights are not owned or authored by Red. Red created and personalized the RedAI product and its assistant identity, local application experience, and framework integration. The canonical statements from Red's Ways Of Thinking are included separately and are explicitly framed as Red's perspectives, not independently verified facts.
