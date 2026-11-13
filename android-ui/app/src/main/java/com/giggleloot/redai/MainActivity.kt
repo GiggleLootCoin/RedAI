@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
     private var webEnabled = true
     private var webProvider = "duckduckgo"
     private var isGenerating = false
+    private var isLoadingModel = false
     private var tts: TextToSpeech? = null
     private val prefs by lazy { getSharedPreferences("redai", Context.MODE_PRIVATE) }
     private val webSearch by lazy { WebSearchService(this) }
@@ -144,6 +145,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private suspend fun autoLoadSavedModel() {
+        if (isLoadingModel || model?.isLoaded == true) return
+        isLoadingModel = true
         try {
             render("Verifying and preparing RedAI.gguf…")
             val file = copyBundledModel()
@@ -166,6 +169,8 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             model = null
             render("RedAI could not prepare its bundled brain: " + (e.message ?: "unknown error"))
+        } finally {
+            isLoadingModel = false
         }
     }
 
