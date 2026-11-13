@@ -408,22 +408,26 @@ fun RedAIApp(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(panel)
-                    .padding(horizontal = 16.dp, vertical = 13.dp),
+                    .background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            listOf(Color(0xFF16070B), panel, Color(0xFF09090C))
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     modifier = Modifier.size(46.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(15.dp),
                     color = red.copy(alpha = 0.14f),
-                    border = BorderStroke(1.dp, red.copy(alpha = 0.55f))
+                    border = BorderStroke(1.dp, red.copy(alpha = 0.72f))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             "R",
                             color = redBright,
                             fontWeight = FontWeight.Black,
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.headlineSmall
                         )
                     }
                 }
@@ -433,7 +437,8 @@ fun RedAIApp(
                         "RedAI",
                         color = white,
                         fontWeight = FontWeight.Black,
-                        style = MaterialTheme.typography.headlineSmall
+                        style = MaterialTheme.typography.headlineSmall,
+                        letterSpacing = (-0.6).sp
                     )
                     Text(
                         "CREATED WITH LOVE BY LITTLE RED BIG SMILE",
@@ -444,7 +449,8 @@ fun RedAIApp(
                 }
                 Surface(
                     shape = RoundedCornerShape(50),
-                    color = if (isModelLoaded) red.copy(alpha = 0.13f) else panelRaised
+                    color = if (isModelLoaded) red.copy(alpha = 0.16f) else panelRaised,
+                    border = BorderStroke(1.dp, if (isModelLoaded) red.copy(alpha = 0.45f) else line)
                 ) {
                     Text(
                         if (isModelLoaded) "LOCAL" else "SETUP",
