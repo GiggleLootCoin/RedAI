@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: ["main"]
   push:
-    branches: ["main"]
+    branches: ["main", "redai-redesign-v4"]
     paths:
       - "android-ui/**"
       - "bridge/**"
@@ -18,7 +18,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -26,6 +26,29 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+
+      - name: Download and verify the selected Qwen3.5-0.8B Q4_K_M brain
+        run: |
+          set -euo pipefail
+          mkdir -p android-ui/app/src/main/assets
+          MODEL_URL="https://huggingface.co/lmstudio-community/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf"
+          curl -L --fail --retry 5 --retry-all-errors --connect-timeout 30 --output android-ui/app/src/main/assets/RedAI.gguf "$MODEL_URL"
+          echo "f5b14da98939b60bbe1019a964eba656407e1e0b64f1fe3003ff6d650e93bfec  android-ui/app/src/main/assets/RedAI.gguf" | sha256sum --check
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          model = Path("android-ui/app/src/main/assets/RedAI.gguf")
+          with model.open("rb") as f:
+              assert f.read(4) == b"GGUF", "Downloaded model is not GGUF"
+          assert model.stat().st_size > 500 * 1024 * 1024, "Unexpectedly small GGUF"
+          source = Path("data/reds_ways_of_thinking_canonical.jsonl")
+          rows = [json.loads(line) for line in source.read_text(encoding="utf-8").splitlines() if line.strip()]
+          assert len(rows) == 38, f"Expected 38 canonical framework statements, got {len(rows)}"
+          Path("android-ui/app/src/main/assets/reds_ways_of_thinking_canonical.jsonl").write_text(
+              source.read_text(encoding="utf-8"), encoding="utf-8"
+          )
+          print(f"Verified {model.stat().st_size:,}-byte Qwen3.5-0.8B GGUF and {len(rows)} canonical framework statements.")
+          PY
 
       - name: Install Gradle
         run: |
@@ -57,6 +80,8 @@ jobs:
           APK="android-ui/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           unzip -l "$APK" | grep -q "classes.dex"
+          unzip -l "$APK" | grep -q "assets/RedAI.gguf"
+          unzip -l "$APK" | grep -q "assets/reds_ways_of_thinking_canonical.jsonl"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama.so"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama_jni.so"
           unzip -l "$APK" | grep -q "lib/arm64-v8a/libggml-cpu.so"
@@ -74,10 +99,33 @@ jobs:
           grep -q 'searchWikipedia' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'searchTavily' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -Fq 'temporary = File(dir, "RedAI.gguf.part")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'That file is not a valid GGUF file' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'The bundled GGUF failed its SHA-256 or file-format check.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'redWaysOfThinkingPrompt()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          ! grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'do not guess its name or developer' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'versionName = "3.5"' android-ui/app/build.gradle.kts
-          echo "RedAI Android runtime libraries, response path, creator identity, epistemic guardrails and v3.5 UI, generic foundation identity and atomic GGUF import checks passed."
+          python3 - <<'PY'
+          import hashlib, json, zipfile
+          apk = "android-ui/app/build/outputs/apk/debug/app-debug.apk"
+          expected = "f5b14da98939b60bbe1019a964eba656407e1e0b64f1fe3003ff6d650e93bfec"
+          with zipfile.ZipFile(apk) as z:
+              model_name = next(n for n in z.namelist() if n.endswith("/assets/RedAI.gguf"))
+              digest = hashlib.sha256()
+              with z.open(model_name) as f:
+                  magic = f.read(4)
+                  assert magic == b"GGUF", "Embedded model is not GGUF"
+                  digest.update(magic)
+                  while True:
+                      block = f.read(1024 * 1024)
+                      if not block: break
+                      digest.update(block)
+              assert digest.hexdigest() == expected, "Embedded GGUF SHA-256 mismatch"
+              ways_name = next(n for n in z.namelist() if n.endswith("/assets/reds_ways_of_thinking_canonical.jsonl"))
+              rows = [json.loads(line) for line in z.read(ways_name).decode().splitlines() if line.strip()]
+              assert len(rows) == 38, f"Expected 38 framework statements, got {len(rows)}"
+          print("Verified the exact bundled GGUF checksum and all 38 canonical framework statements inside the APK.")
+          PY
+          echo "RedAI runtime, bundled brain, first-launch bootstrap, framework context, creator identity and offline-search checks passed."
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -86,6 +134,7 @@ jobs:
           path: android-ui/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publish GitHub release
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -93,7 +142,7 @@ jobs:
           TAG="redai-android"
           APK="android-ui/app/build/outputs/apk/debug/app-debug.apk"
           TITLE="RedAI Android — Local GGUF"
-          NOTES="RedAI Android v3.5 with local GGUF chat, optional automatic DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations with tappable URLs, Android Keystore-encrypted optional Tavily key, foundation-neutral RedAI identity guardrails, safe GGUF import validation, and verified ARM64 llama.cpp runtime libraries. Installable CPU/ARM64 debug build for Android."
+          NOTES="RedAI Android with bundled Qwen3.5-0.8B Q4_K_M GGUF, automatic first-launch local model setup, Red's 38 canonical Ways Of Thinking statements in the system context, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations, and ARM64 llama.cpp runtime. The foundation model is Qwen; Red created and personalized the RedAI product."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --latest
           else
