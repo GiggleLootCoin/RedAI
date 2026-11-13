@@ -87,6 +87,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           TAG="redai-android"
-          gh release delete "$TAG" --yes --cleanup-tag || true
-          gh release create "$TAG"             android-ui/app/build/outputs/apk/debug/app-debug.apk             --title "RedAI Android — Local GGUF"             --notes "RedAI Android v3.5 with local GGUF chat, optional automatic DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations with tappable URLs, Android Keystore-encrypted optional Tavily key, RedAI identity guardrails, and verified ARM64 llama.cpp runtime libraries. Installable CPU/ARM64 debug build for Android."             --latest
+          APK="android-ui/app/build/outputs/apk/debug/app-debug.apk"
+          TITLE="RedAI Android — Local GGUF"
+          NOTES="RedAI Android v3.5 with local GGUF chat, optional automatic DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations with tappable URLs, Android Keystore-encrypted optional Tavily key, foundation-neutral RedAI identity guardrails, safe GGUF import validation, and verified ARM64 llama.cpp runtime libraries. Installable CPU/ARM64 debug build for Android."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --latest
+          else
+            gh release create "$TAG" --title "$TITLE" --notes "$NOTES" --latest
+          fi
+          gh release upload "$TAG" "$APK" --clobber
