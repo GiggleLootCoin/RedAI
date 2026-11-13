@@ -129,8 +129,10 @@ jobs:
           grep -Fq 'The bundled GGUF failed its SHA-256 or file-format check.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'redWaysOfThinkingPrompt()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'do not guess its name or developer' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'Do not volunteer technical foundation-model names' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'versionName = "4.1"' android-ui/app/build.gradle.kts
+          grep -q '@drawable/ic_redai_launcher' android-ui/app/src/main/AndroidManifest.xml
+          test -s android-ui/app/src/main/res/drawable/ic_redai_launcher.xml
           grep -q 'applicationId = "com.giggleloot.redai.v4"' android-ui/app/build.gradle.kts
           python3 - <<'PY'
           import hashlib, json, zipfile
