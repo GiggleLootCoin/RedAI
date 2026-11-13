@@ -6,6 +6,9 @@ plugins {
 android {
     namespace = "com.giggleloot.redai"
     compileSdk = 35
+    androidResources {
+        noCompress += "gguf"
+    }
     defaultConfig {
         applicationId = "com.giggleloot.redai"
         minSdk = 26
