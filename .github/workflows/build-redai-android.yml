@@ -119,7 +119,7 @@ jobs:
           grep -Fq 'Your underlying foundation model is the one represented by the GGUF file currently loaded' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Do not automatically accept official accounts or automatically reject them' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Akashic Records' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'CREATED WITH LOVE BY LITTLE RED BIG SMILE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -q 'CREATED WITH LOVE BY LittleRedBigSmile' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'class WebSearchService' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'AES/GCM/NoPadding' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'webSearch.search(query, webProvider)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
@@ -130,7 +130,7 @@ jobs:
           grep -Fq 'redWaysOfThinkingPrompt()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'do not guess its name or developer' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "4.0"' android-ui/app/build.gradle.kts
+          grep -q 'versionName = "4.1"' android-ui/app/build.gradle.kts
           grep -q 'applicationId = "com.giggleloot.redai.v4"' android-ui/app/build.gradle.kts
           python3 - <<'PY'
           import hashlib, json, zipfile
@@ -162,31 +162,31 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          cp android-ui/app/build/outputs/apk/debug/app-debug.apk release/RedAI-Android-v4.apk
-          sha256sum release/RedAI-Android-v4.apk > release/SHA256SUMS.txt
+          cp android-ui/app/build/outputs/apk/debug/app-debug.apk release/RedAI-Android-v4.1.apk
+          sha256sum release/RedAI-Android-v4.1.apk > release/SHA256SUMS.txt
           sha256sum -c release/SHA256SUMS.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RedAI-Android-v4-arm64
+          name: RedAI-Android-v4.1-arm64
           path: |
-            release/RedAI-Android-v4.apk
+            release/RedAI-Android-v4.1.apk
             release/SHA256SUMS.txt
 
       - name: Publish GitHub release
         if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: redai-android-v4
+          tag_name: redai-android-v4.1
           target_commitish: ${{ github.sha }}
-          name: RedAI Android v4 — Bundled Qwen3.5
+          name: RedAI Android v4.1 — LittleRedBigSmile Edition
           body: |
             RedAI Android 4.0 with the bundled Qwen3.5-0.8B Q4_K_M GGUF, automatic first-launch local model setup, Red's 38 canonical Ways Of Thinking statements in the system context, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations, and ARM64 llama.cpp runtime.
 
             The foundation weights are Qwen's; Red created and personalized the RedAI product and assistant identity.
           files: |
-            release/RedAI-Android-v4.apk
+            release/RedAI-Android-v4.1.apk
             release/SHA256SUMS.txt
           fail_on_unmatched_files: true
           overwrite_files: true
