@@ -62,7 +62,7 @@ jobs:
           grep -Fq '/no_think' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'You are RedAI, a distinct AI created and personalized by Red' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'You are not Red' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'Your foundation is Qwen3-1.7B from Alibaba/Qwen' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'Your underlying foundation model is the one represented by the GGUF file currently loaded' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Do not automatically accept official accounts or automatically reject them' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Akashic Records' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'CREATED WITH LOVE BY LITTLE RED BIG SMILE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
@@ -73,8 +73,9 @@ jobs:
           grep -q 'searchTavily' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -Fq 'temporary = File(dir, "RedAI.gguf.part")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'That file is not a valid GGUF file' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "3.4"' android-ui/app/build.gradle.kts
-          echo "RedAI Android runtime libraries, response path, creator identity, epistemic guardrails and v3.4 UI and atomic GGUF import checks passed."
+          grep -Fq 'do not guess its name or developer' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -q 'versionName = "3.5"' android-ui/app/build.gradle.kts
+          echo "RedAI Android runtime libraries, response path, creator identity, epistemic guardrails and v3.5 UI, generic foundation identity and atomic GGUF import checks passed."
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -88,4 +89,4 @@ jobs:
         run: |
           TAG="redai-android"
           gh release delete "$TAG" --yes --cleanup-tag || true
-          gh release create "$TAG"             android-ui/app/build/outputs/apk/debug/app-debug.apk             --title "RedAI Android — Local GGUF"             --notes "RedAI Android v3.4 with local GGUF chat, optional automatic DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations with tappable URLs, Android Keystore-encrypted optional Tavily key, RedAI identity guardrails, and verified ARM64 llama.cpp runtime libraries. Installable CPU/ARM64 debug build for Android."             --latest
+          gh release create "$TAG"             android-ui/app/build/outputs/apk/debug/app-debug.apk             --title "RedAI Android — Local GGUF"             --notes "RedAI Android v3.5 with local GGUF chat, optional automatic DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations with tappable URLs, Android Keystore-encrypted optional Tavily key, RedAI identity guardrails, and verified ARM64 llama.cpp runtime libraries. Installable CPU/ARM64 debug build for Android."             --latest
