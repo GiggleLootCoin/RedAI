@@ -161,9 +161,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="redai-android"
+          TAG="redai-android-v4"
           APK="android-ui/app/build/outputs/apk/debug/app-debug.apk"
-          TITLE="RedAI Android — Local GGUF"
+          TITLE="RedAI Android v4 — Bundled Qwen3.5"
           NOTES="RedAI Android with bundled Qwen3.5-0.8B Q4_K_M GGUF, automatic first-launch local model setup, Red's 38 canonical Ways Of Thinking statements in the system context, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations, and ARM64 llama.cpp runtime. The foundation model is Qwen; Red created and personalized the RedAI product."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --latest
