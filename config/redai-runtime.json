@@ -29,7 +29,9 @@
   "memory": {
     "enabled": true,
     "mode": "external_local_store",
-    "model_weights_do_not_store_conversation_memory": true
+    "model_weights_do_not_store_conversation_memory": true,
+    "max_saved_conversations": 30,
+    "storage": "SharedPreferences local session store"
   },
   "identity": "RedAI is a personalized local AI created by Red and trained on Red's Ways Of Thinking.",
   "privacy": "Local inference remains local unless the runtime explicitly invokes an external web or other tool.",
@@ -40,11 +42,24 @@
     "features": [
       "llama.cpp ARM64 runtime CPU feature detection",
       "token streaming",
-      "on-device chat history"
+      "on-device chat history",
+      "up to 30 persistent chat sessions with switching and deletion",
+      "local OCR for PDF and image text"
     ]
   },
   "foundation_source": "openbmb/MiniCPM5-1B",
   "personalized_checkpoint": "RedAI MiniCPM5-1B fine-tuned candidate",
   "model_sha256": "eca3959621ebc7c4dc49f8f7bcdb015642e6c37d7f8a26dcd4d95d9072d40052",
-  "model_size_bytes": 688065856
+  "model_size_bytes": 688065856,
+  "app_version": "5.1",
+  "attachments": {
+    "text_files": true,
+    "pdf_ocr_pages": 5,
+    "image_ocr": true,
+    "visual_scene_understanding": false
+  },
+  "voice": {
+    "input": "Android system speech recognition tap-to-talk",
+    "output": "Android TextToSpeech"
+  }
 }
