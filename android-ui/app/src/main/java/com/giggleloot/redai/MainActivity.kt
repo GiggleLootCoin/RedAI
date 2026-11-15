@@ -407,7 +407,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun RedAIApp(
     onRetryModel: () -> Unit,
-    onSend: (String, (String) -> Unit) -> Unit,
+    onNewChat: () -> Unit,
+    onSend: (String, (String, Boolean, Float) -> Unit) -> Unit,
     onSpeak: (String) -> Unit,
     onVoice: () -> Unit,
     onAttach: () -> Unit,
@@ -450,6 +451,7 @@ fun RedAIApp(
     var showSettings by remember { mutableStateOf(false) }
     var apiKeyInput by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var modelSpeed by remember { mutableStateOf(0f) }
     val listState = rememberLazyListState()
     val uriHandler = LocalUriHandler.current
 
@@ -607,7 +609,11 @@ fun RedAIApp(
                         )
                     }
                     AssistChip(
-                        onClick = { messages = listOf(Message("assistant", "New private chat started.")) },
+                        onClick = {
+                            messages = listOf(Message("assistant", "A fresh private conversation is ready."))
+                            onNewChat()
+                        },
+                        enabled = !busy && isModelLoaded,
                         label = { Text("NEW CHAT", fontWeight = FontWeight.Bold) },
                         colors = AssistChipDefaults.assistChipColors(
                             containerColor = panelRaised,
@@ -616,7 +622,7 @@ fun RedAIApp(
                     )
                     if (webEnabled) {
                         AssistChip(
-                            onClick = { },
+                            onClick = { showSettings = true },
                             label = { Text("LIVE WEB", color = redBright, fontWeight = FontWeight.Bold) },
                             colors = AssistChipDefaults.assistChipColors(
                                 containerColor = red.copy(alpha = 0.12f),
@@ -658,11 +664,9 @@ fun RedAIApp(
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
-                            Text(
-                                "×",
-                                color = white,
-                                style = MaterialTheme.typography.titleLarge
-                            )
+                            TextButton(onClick = { showSettings = false }) {
+                                Text("CLOSE", color = redBright, fontWeight = FontWeight.Bold)
+                            }
                         }
                         Spacer(Modifier.height(12.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -752,13 +756,19 @@ fun RedAIApp(
                 }
             }
 
-            if (!status.isNullOrBlank()) {
-                Text(
-                    status,
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 2.dp),
-                    color = muted,
-                    style = MaterialTheme.typography.bodySmall
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (!status.isNullOrBlank()) {
+                    Text(status, modifier = Modifier.weight(1f), color = muted, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                } else {
+                    Text("PRIVATE ON-DEVICE ENGINE", color = muted, style = MaterialTheme.typography.labelSmall)
+                }
+                if (modelSpeed > 0f) {
+                    Text(String.format(Locale.US, "%.1f tok/s", modelSpeed), color = redBright, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                }
             }
 
             LazyColumn(
@@ -908,20 +918,21 @@ fun RedAIApp(
                     enabled = input.isNotBlank() && isModelLoaded && !busy,
                     onClick = {
                         val q = input.trim()
-                        val recentContext = messages.takeLast(4)
-                            .filter { it.text.isNotBlank() }
-                            .joinToString("\n") {
-                                (if (it.role == "user") "User: " else "RedAI: ") + it.text.take(500)
-                            }
-                        val intelligentPrompt =
-                            if (recentContext.isBlank()) q
-                            else "Recent conversation:\n$recentContext\n\nUser's newest message: $q"
                         input = ""
-                        messages = messages + Message("user", q)
+                        messages = messages + Message("user", q) + Message("assistant", "")
                         busy = true
-                        onSend(intelligentPrompt) { answer ->
-                            messages = messages + Message("assistant", answer)
-                            busy = false
+                        modelSpeed = 0f
+                        onSend(q) { partial, finished, speed ->
+                            val current = messages.lastOrNull()
+                            if (current?.role == "assistant") {
+                                messages = messages.dropLast(1) + Message("assistant", partial)
+                            } else {
+                                messages = messages + Message("assistant", partial)
+                            }
+                            if (finished) {
+                                busy = false
+                                modelSpeed = speed
+                            }
                         }
                     },
                     modifier = Modifier.height(56.dp),
