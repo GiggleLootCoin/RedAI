@@ -179,7 +179,7 @@ class MainActivity : ComponentActivity() {
                         append(". The following text was extracted locally. For an image this is OCR only, not visual scene understanding. Be clear about missing or truncated content.\n\n")
                         append(extracted)
                     }
-                    generate(modelPrompt) { answer, finished, speed ->
+                    generate(modelPrompt, allowSearch = false) { answer, finished, speed ->
                         if (finished) {
                             appendHistoryExchange(displayPrompt, answer, modelPrompt)
                             render(if (speed > 0f) "File processed locally • ${String.format(Locale.US, "%.1f", speed)} tok/s" else "File processed locally.")
@@ -638,7 +638,7 @@ class MainActivity : ComponentActivity() {
             Regex("\\b(20(2[5-9]|3[0-9]))\\b").containsMatchIn(q)
     }
 
-    private fun generate(userText: String, callback: (String, Boolean, Float) -> Unit) {
+    private fun generate(userText: String, allowSearch: Boolean = true, callback: (String, Boolean, Float) -> Unit) {
         if (!modelReady) {
             callback("RedAI's private local engine is still loading. Please try again shortly.", true, 0f)
             return
@@ -652,7 +652,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             try {
                 val query = userText.substringAfterLast("User's newest message: ", userText).trim().take(2400)
-                val searchRequested = needsFreshInfo(query)
+                val searchRequested = allowSearch && needsFreshInfo(query)
                 val online = if (searchRequested && webEnabled) withContext(Dispatchers.IO) { networkAvailable() } else false
                 val searchResult = if (searchRequested && webEnabled && online) {
                     withContext(Dispatchers.IO) { webSearch.search(query, webProvider) }
@@ -1153,7 +1153,7 @@ fun RedAIApp(
                             }) { Text("SAVE KEY", color = redBright, fontWeight = FontWeight.Bold) }
                         }
                         Text(
-                            "Attachments: text, PDFs (first five pages) and image OCR. Images are not visually interpreted. Voice uses the Android speech and text-to-speech services.\n\nOnly the latest user question is sent to the selected search provider. Chat history stays on this phone.",
+                            "Attachments: text, PDFs (first five pages) and image OCR. Images are not visually interpreted. Attachment contents stay on this phone and are never sent to web search. Voice uses Android speech and text-to-speech services.\n\nOnly a normal user query is sent to the selected search provider. Chat history stays on this phone.",
                             color = muted,
                             style = MaterialTheme.typography.bodySmall
                         )
