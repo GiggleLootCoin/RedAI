@@ -344,7 +344,11 @@ class MainActivity : ComponentActivity() {
     private fun persistCurrentSession() {
         ensureSessionStore()
         val currentId = sessionsPrefs.getString("current_id", null) ?: return
-        val messages = runCatching { JSONArray(historyPrefs.getString("messages", "[]") ?: "[]") }.getOrElse { JSONArray() }
+        val rawMessages = runCatching { JSONArray(historyPrefs.getString("messages", "[]") ?: "[]") }.getOrElse { JSONArray() }
+        val messages = JSONArray()
+        for (index in maxOf(0, rawMessages.length() - 60) until rawMessages.length()) {
+            messages.put(rawMessages.opt(index))
+        }
         val sessions = readSessions()
         var found = false
         for (index in 0 until sessions.length()) {
