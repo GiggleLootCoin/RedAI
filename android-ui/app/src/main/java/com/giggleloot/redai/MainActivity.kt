@@ -191,10 +191,10 @@ class MainActivity : ComponentActivity() {
     private fun miniCpm5NoThinkTemplate(): String = """
         {{- bos_token }}
         {%- for message in messages %}
-        {{- '<|im_start|>' + message['role'] + '\\n' + message['content'] + '<|im_end|>\\n' }}
+        {{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>\n' }}
         {%- endfor %}
         {%- if add_generation_prompt %}
-        {{- '<|im_start|>assistant\\n<think>\\n\\n</think>\\n\\n' }}
+        {{- '<|im_start|>assistant\n<think>\n\n</think>\n\n' }}
         {%- endif %}
     """.trimIndent()
 
