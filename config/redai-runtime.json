@@ -2,26 +2,24 @@
   "name": "RedAI",
   "created_by": "Red",
   "creator_display_name": "Little Red Big Smile",
-  "foundation": "Qwen3-1.7B",
+  "foundation": "Qwen3.5-0.8B",
   "format": "GGUF",
   "quantization": "Q4_K_M",
   "mode": "offline_first",
   "performance": {
-    "default_temperature": 0.7,
-    "temperature_range": [
-      0.55,
-      0.85
-    ],
-    "top_p": 0.8,
-    "top_k": 20,
-    "repeat_penalty": 1.1,
-    "max_output_tokens": 512,
-    "context": 2048,
+    "default_temperature": 0.68,
+    "top_p": 0.85,
+    "top_k": 24,
+    "repeat_penalty": 1.08,
+    "max_output_pieces": {
+      "quick": 104,
+      "long": 176
+    },
+    "context": 1536,
     "cpu_threads": 4,
     "use_mmap": true,
-    "flash_attention_when_supported": true,
-    "gpu_layers": 0,
-    "presence_penalty": 1.5
+    "use_mlock": false,
+    "gpu_layers": 0
   },
   "web_search": {
     "enabled": true,
@@ -34,5 +32,15 @@
     "model_weights_do_not_store_conversation_memory": true
   },
   "identity": "RedAI is a personalized local AI created by Red and trained on Red's Ways Of Thinking.",
-  "privacy": "Local inference remains local unless the runtime explicitly invokes an external web or other tool."
+  "privacy": "Local inference remains local unless the runtime explicitly invokes an external web or other tool.",
+  "inference_engine": {
+    "name": "SmolChatAndroidLib",
+    "version": "V2.1",
+    "license": "Apache-2.0",
+    "features": [
+      "llama.cpp ARM64 runtime CPU feature detection",
+      "token streaming",
+      "on-device chat history"
+    ]
+  }
 }
