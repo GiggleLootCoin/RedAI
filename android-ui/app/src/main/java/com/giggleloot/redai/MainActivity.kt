@@ -230,11 +230,31 @@ class MainActivity : ComponentActivity() {
             }
             return digest.digest().joinToString("") { "%02x".format(it) }
         }
+        val verification = getSharedPreferences("redai_model_verification", Context.MODE_PRIVATE)
         fun valid(file: File): Boolean {
             if (!file.isFile || file.length() < 500L * 1024L * 1024L) return false
             val magic = ByteArray(4)
             val hasGgufMagic = file.inputStream().use { it.read(magic) == 4 && magic.contentEquals(byteArrayOf(0x47, 0x47, 0x55, 0x46)) }
-            return hasGgufMagic && sha256(file) == expectedSha256
+            if (!hasGgufMagic) return false
+            val size = file.length()
+            val modified = file.lastModified()
+            val verifiedAt = verification.getLong("verified_at", 0L)
+            val cachedMatch = file.absolutePath == destination.absolutePath &&
+                verification.getLong("verified_size", -1L) == size &&
+                verification.getLong("verified_modified", -1L) == modified &&
+                verification.getString("verified_sha", "") == expectedSha256 &&
+                System.currentTimeMillis() - verifiedAt < 7L * 24L * 60L * 60L * 1000L
+            if (cachedMatch) return true
+            val digestMatches = sha256(file) == expectedSha256
+            if (digestMatches && file.absolutePath == destination.absolutePath) {
+                verification.edit()
+                    .putLong("verified_size", size)
+                    .putLong("verified_modified", modified)
+                    .putLong("verified_at", System.currentTimeMillis())
+                    .putString("verified_sha", expectedSha256)
+                    .apply()
+            }
+            return digestMatches
         }
         if (valid(destination)) return@withContext destination
         temporary.delete()
