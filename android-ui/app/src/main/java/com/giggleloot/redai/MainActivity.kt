@@ -392,7 +392,7 @@ class MainActivity : ComponentActivity() {
             .put("messages", starter))
         sessionsPrefs.edit().putString("current_id", id).putString("sessions", sessions.toString()).apply()
         historyPrefs.edit().putString("messages", starter.toString()).apply()
-        refreshChatSummaries()
+        persistCurrentSession()
         lifecycleScope.launch { autoLoadSavedModel(reset = true, restoreHistory = false) }
     }
 
