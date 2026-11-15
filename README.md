@@ -4,11 +4,12 @@ Standalone local AI model for RedUI.
 
 ## Current build target
 
-- Foundation: **Qwen3.5-0.8B**
+- Foundation: **Qwen3.5-0.8B Q4_K_M**
 - Personalization: **Red's Ways Of Thinking**
 - Fine-tuning: **LoRA with assistant-completion-only loss**
 - Quantization: **GGUF Q4_K_M**
-- Runtime target: **Android / Galaxy A12-class hardware**
+- Runtime: **SmolChatAndroidLib V2.1 / llama.cpp, ARM64 CPU feature detection, streaming**
+- Runtime target: **Android 12 / Galaxy A12-class hardware**
 - Design goal: **free, offline-first local inference**, with optional external tools only when explicitly invoked
 
 ## What was improved
@@ -28,22 +29,26 @@ RedAI is created and personalized by Red, also known as LittleRedBigSmile. The u
 
 ## Recommended local runtime
 
-- Context: **2048 tokens** for the Galaxy A12 preset
+- Context: **1536 tokens** for the Galaxy A12 preset
 - Temperature: **0.70**
 - Top-p: **0.80–0.90**
 - Top-k: **20–40**
 - Repeat penalty: **1.10**
-- Max output: **512 tokens**
-- CPU threads: **4**
+- Output: **104 pieces for ordinary replies; up to 176 for explicitly detailed replies**
+- CPU threads: **4**, with actual throughput displayed in the app
 - Memory mapping: **enabled**
 - Flash attention: **when supported**
 - GPU layers: **0 by default for stability**
 
-The model's underlying Qwen3-1.7B context capacity is larger, but the 2048-token local preset is intentional: it reduces memory pressure and keeps the phone-focused runtime practical.
+The bundled Qwen3.5-0.8B model is intentionally kept small for the phone's memory and CPU limits. Short replies are capped to reduce unnecessary decoding; longer limits are used only when the request calls for detail. The app streams generated text and reports measured tokens per second. Actual Galaxy A12 speed still requires on-device measurement.
 
 ## Free build
 
 RedAI is built from the repository using GitHub Actions and open-source tooling. No paid API, paid model host, subscription, or proprietary inference service is required to build or run the GGUF locally.
+
+## Android v5 runtime
+
+The Android app uses the Apache-2.0 SmolChatAndroidLib V2.1 runtime, which selects an ARM64 native build based on CPU features and supports streamed token output. The app keeps the model bundled and local, restores a short recent conversation, and uses a smaller relevant subset of Red's Ways Of Thinking instead of inserting all 38 statements into every related prompt. The app displays measured generation speed. A successful CI build is not a substitute for testing on the physical Galaxy A12.
 
 ## Optional live web search
 
