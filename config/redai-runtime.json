@@ -1,7 +1,7 @@
 {
   "name": "RedAI",
   "created_by": "Red",
-  "creator_display_name": "Little Red Big Smile",
+  "creator_display_name": "LittleRedBigSmile",
   "foundation": "MiniCPM5-1B",
   "format": "GGUF",
   "quantization": "Q4_K_M",
