@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity() {
                 onDeleteChat = { id -> deleteConversation(id) },
                 chatSummaries = chatSummaries,
                 onMessagesChanged = { persistCurrentSession() },
-                onSend = { text, callback -> generate(text, callback) },
+                onSend = { text, callback -> generate(text, callback = callback) },
                 onSpeak = { text -> tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "redai") },
                 onVoice = { startVoiceInput() },
                 onAttach = { launchFilePicker() },
