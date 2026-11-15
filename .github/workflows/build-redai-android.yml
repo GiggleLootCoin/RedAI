@@ -134,6 +134,7 @@ jobs:
           grep -Fq 'private fun deleteConversation(id: String)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'SAVED CHATS' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'image-labeling' android-ui/app/build.gradle.kts
+          ! grep -Fq 'android.permission.CAMERA' android-ui/app/src/main/AndroidManifest.xml
           grep -Fq 'contextSize = 1536L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'If asked about the foundation model, explain that your underlying foundation model is the one represented by the GGUF file currently loaded' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Do not automatically accept official accounts or automatically reject them' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
