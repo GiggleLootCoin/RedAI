@@ -122,6 +122,12 @@ jobs:
           grep -Fq 'flowOn(Dispatchers.Default)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'engine.stop()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'engine.getResponseGenerationSpeed()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'chatTemplate = miniCpm5NoThinkTemplate()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'private suspend fun extractPdfText' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'private suspend fun extractImageText' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'TextRecognition.getClient' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'appendHistoryExchange' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          ! grep -Fq 'image-labeling' android-ui/app/build.gradle.kts
           grep -Fq 'contextSize = 1536L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'If asked about the foundation model, explain that your underlying foundation model is the one represented by the GGUF file currently loaded' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Do not automatically accept official accounts or automatically reject them' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
