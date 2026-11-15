@@ -37,6 +37,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
@@ -367,16 +368,31 @@ fun RedAIApp(
     onWebProviderChanged: (String) -> Unit,
     onTavilyKeySaved: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    val historyPrefs = remember { context.getSharedPreferences("redai_chat_history", Context.MODE_PRIVATE) }
     var input by remember { mutableStateOf("") }
     var messages by remember {
         mutableStateOf(
-            listOf(
-                Message(
-                    "assistant",
-                    "RedAI is preparing its private on-device brain. Your chats stay on this phone."
-                )
-            )
+            runCatching {
+                val saved = JSONArray(historyPrefs.getString("messages", "[]") ?: "[]")
+                (0 until saved.length()).mapNotNull { index ->
+                    val item = saved.optJSONObject(index) ?: return@mapNotNull null
+                    val role = item.optString("role")
+                    val text = item.optString("text")
+                    if (role in setOf("user", "assistant") && text.isNotBlank()) Message(role, text) else null
+                }.takeLast(200)
+            }.getOrDefault(emptyList()).ifEmpty {
+                listOf(Message("assistant", "RedAI is preparing its private on-device brain. Your chats stay on this phone."))
+            }
         )
+    }
+
+    LaunchedEffect(messages) {
+        val saved = JSONArray()
+        messages.takeLast(200).forEach { message ->
+            saved.put(JSONObject().put("role", message.role).put("text", message.text))
+        }
+        historyPrefs.edit().putString("messages", saved.toString()).apply()
     }
     var showSettings by remember { mutableStateOf(false) }
     var apiKeyInput by remember { mutableStateOf("") }
