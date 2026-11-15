@@ -1030,7 +1030,6 @@ fun RedAIApp(
                 )
             }
             if (pendingDeleteId != null) {
-                val deleting = chatSummaries.firstOrNull { it.id == pendingDeleteId }
                 AlertDialog(
                     onDismissRequest = { pendingDeleteId = null },
                     title = { Text("DELETE THIS CHAT?", color = redBright, fontWeight = FontWeight.Black) },
