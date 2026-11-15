@@ -17,7 +17,7 @@ Standalone local AI model for RedUI.
 The training pipeline is deliberately conservative because the personalization corpus is small. RedAI now:
 
 - trains only on assistant completion tokens instead of wasting capacity learning to reproduce system/user prompts;
-- uses the Qwen chat template consistently for training and llama.cpp verification;
+- uses the MiniCPM5 chat template consistently for training and llama.cpp verification;
 - uses the separately trained RedAI MiniCPM5-1B checkpoint, with Red's identity and framework material included in the fine-tuning corpus and runtime prompt;
 - preserves Red's Ways Of Thinking as personalized material while teaching the model to distinguish framework/perspective from independently verified fact;
 - includes identity, correction, honesty, tool-use, privacy, planning, math, ambiguity, and failure-reporting anchors;
@@ -31,9 +31,9 @@ RedAI is created and personalized by Red, also known as LittleRedBigSmile. The u
 
 - Context: **1536 tokens** for the Galaxy A12 preset
 - Temperature: **0.70**
-- Top-p: **0.80–0.90**
-- Top-k: **20–40**
-- Repeat penalty: **1.10**
+- Top-p: **0.95**
+- Top-k: **40**
+- Repeat penalty: **1.08**
 - Output: **104 pieces for ordinary replies; up to 176 for explicitly detailed replies**
 - CPU threads: **4**, with actual throughput displayed in the app
 - Memory mapping: **enabled**
