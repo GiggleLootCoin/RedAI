@@ -930,7 +930,7 @@ fun RedAIApp(
                             }) { Text("SAVE KEY", color = redBright, fontWeight = FontWeight.Bold) }
                         }
                         Text(
-                            "Only the latest user question is sent to the selected search provider. Chat history stays on this phone.",
+                            "Attachments: text, PDFs (first five pages) and image OCR. Images are not visually interpreted. Voice uses the Android speech and text-to-speech services.\n\nOnly the latest user question is sent to the selected search provider. Chat history stays on this phone.",
                             color = muted,
                             style = MaterialTheme.typography.bodySmall
                         )
