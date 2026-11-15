@@ -46,9 +46,9 @@ The bundled MiniCPM5-1B Q4_K_M checkpoint is approximately 688 MB and was select
 
 RedAI is built from the repository using GitHub Actions and open-source tooling. No paid API, paid model host, subscription, or proprietary inference service is required to build or run the GGUF locally.
 
-## Android v5 runtime
+## Android v5.1 runtime
 
-The Android app uses the Apache-2.0 SmolChatAndroidLib V2.1 runtime, which selects an ARM64 native build based on CPU features and supports streamed token output. The bundled GGUF is the fine-tuned RedAI MiniCPM5-1B candidate, not the unpersonalized Qwen3.5-0.8B test model. The app keeps the model bundled and local, restores a short recent conversation, and uses a smaller relevant subset of Red's Ways Of Thinking instead of inserting all 38 statements into every related prompt. It supports local text-file reading, PDF text extraction through OCR (first five pages), and image OCR; it does not claim visual scene understanding. Tap-to-talk uses Android's available speech-recognition service and replies can be spoken with Android TTS. The app displays measured generation speed. A successful CI build is not a substitute for testing on the physical Galaxy A12.
+The Android app uses the Apache-2.0 SmolChatAndroidLib V2.1 runtime, which selects an ARM64 native build based on CPU features and supports streamed token output. The bundled GGUF is the fine-tuned RedAI MiniCPM5-1B candidate, not the unpersonalized Qwen3.5-0.8B test model. The app keeps the model bundled and local, stores up to 30 separate conversations with open/delete controls, restores the recent context of the selected chat, and uses a smaller relevant subset of Red's Ways Of Thinking instead of inserting all 38 statements into every related prompt. It supports local text-file reading, PDF text extraction through OCR (first five pages), and image OCR; it does not claim visual scene understanding. Tap-to-talk uses Android's available speech-recognition service and replies can be spoken with Android TTS. The app displays measured generation speed. A successful CI build is not a substitute for testing on the physical Galaxy A12.
 
 ## Optional live web search
 
