@@ -6,12 +6,15 @@ plugins {
 android {
     namespace = "com.giggleloot.redai"
     compileSdk = 35
+    androidResources {
+        noCompress += "gguf"
+    }
     defaultConfig {
-        applicationId = "com.giggleloot.redai"
+        applicationId = "com.giggleloot.redai.v4"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "3.5"
+        versionCode = 14
+        versionName = "4.1"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
