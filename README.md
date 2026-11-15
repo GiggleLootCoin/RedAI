@@ -4,7 +4,7 @@ Standalone local AI model for RedUI.
 
 ## Current build target
 
-- Foundation: **Qwen3-1.7B**
+- Foundation: **Qwen3.5-0.8B**
 - Personalization: **Red's Ways Of Thinking**
 - Fine-tuning: **LoRA with assistant-completion-only loss**
 - Quantization: **GGUF Q4_K_M**
@@ -17,7 +17,7 @@ The training pipeline is deliberately conservative because the personalization c
 
 - trains only on assistant completion tokens instead of wasting capacity learning to reproduce system/user prompts;
 - uses the Qwen chat template consistently for training and llama.cpp verification;
-- keeps the foundation at Qwen3-1.7B, which is a stronger practical fit for the Galaxy A12 than moving to a much larger model;
+- keeps the bundled foundation at Qwen3.5-0.8B Q4_K_M, matching the exact model downloaded, hash-verified, smoke-tested and packaged by the Android workflow;
 - preserves Red's Ways Of Thinking as personalized material while teaching the model to distinguish framework/perspective from independently verified fact;
 - includes identity, correction, honesty, tool-use, privacy, planning, math, ambiguity, and failure-reporting anchors;
 - verifies non-empty output, identity, creator, normal chat, math, capabilities, app/project naming, current-information honesty, and hidden response-planning leakage before packaging.
