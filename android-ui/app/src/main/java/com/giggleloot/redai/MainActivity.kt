@@ -60,6 +60,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 data class Message(val role: String, val text: String, val context: String? = null)
+data class ChatSummary(val id: String, val title: String, val updatedAt: Long)
 
 class MainActivity : ComponentActivity() {
     private val engine = SmolLM()
@@ -71,6 +72,9 @@ class MainActivity : ComponentActivity() {
     private var isLoadingModel = false
     private var tts: TextToSpeech? = null
     private val prefs by lazy { getSharedPreferences("redai", Context.MODE_PRIVATE) }
+    private val historyPrefs by lazy { getSharedPreferences("redai_chat_history", Context.MODE_PRIVATE) }
+    private val sessionsPrefs by lazy { getSharedPreferences("redai_chat_sessions", Context.MODE_PRIVATE) }
+    private val chatSummaries = mutableStateListOf<ChatSummary>()
     private val webSearch by lazy { WebSearchService(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,6 +82,8 @@ class MainActivity : ComponentActivity() {
         webEnabled = prefs.getBoolean("web_enabled", true)
         webProvider = prefs.getString("web_provider", "duckduckgo") ?: "duckduckgo"
         tts = TextToSpeech(this) { if (it == TextToSpeech.SUCCESS) tts?.language = Locale.US }
+        ensureSessionStore()
+        refreshChatSummaries()
         render("Preparing RedAI's private local brain on this phone…")
         lifecycleScope.launch { autoLoadSavedModel() }
     }
@@ -87,6 +93,10 @@ class MainActivity : ComponentActivity() {
             RedAIApp(
                 onRetryModel = { lifecycleScope.launch { autoLoadSavedModel() } },
                 onNewChat = { startNewConversation() },
+                onSwitchChat = { id -> switchConversation(id) },
+                onDeleteChat = { id -> deleteConversation(id) },
+                chatSummaries = chatSummaries,
+                onMessagesChanged = { persistCurrentSession() },
                 onSend = { text, callback -> generate(text, callback) },
                 onSpeak = { text -> tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "redai") },
                 onVoice = { startVoiceInput() },
@@ -190,6 +200,7 @@ class MainActivity : ComponentActivity() {
         saved.put(JSONObject().put("role", "assistant").put("text", assistantText))
         while (saved.length() > 200) saved.remove(0)
         history.edit().putString("messages", saved.toString()).apply()
+        persistCurrentSession()
     }
 
     private fun attachmentDisplayName(uri: Uri): String {
@@ -280,14 +291,149 @@ class MainActivity : ComponentActivity() {
                 }
         }
 
+    private fun readSessions(): JSONArray =
+        runCatching { JSONArray(sessionsPrefs.getString("sessions", "[]") ?: "[]") }.getOrElse { JSONArray() }
+
+    private fun titleForMessages(messages: JSONArray): String {
+        for (index in 0 until messages.length()) {
+            val item = messages.optJSONObject(index) ?: continue
+            if (item.optString("role") == "user") {
+                val title = item.optString("text").replace(Regex("\\s+"), " ").trim()
+                if (title.isNotBlank()) return title.take(42)
+            }
+        }
+        return "New conversation"
+    }
+
+    private fun ensureSessionStore() {
+        val sessions = readSessions()
+        val currentId = sessionsPrefs.getString("current_id", null)
+        val currentExists = (0 until sessions.length()).any { sessions.optJSONObject(it)?.optString("id") == currentId }
+        if (sessions.length() == 0) {
+            val id = java.util.UUID.randomUUID().toString()
+            val messages = runCatching { JSONArray(historyPrefs.getString("messages", "[]") ?: "[]") }.getOrElse { JSONArray() }
+            sessions.put(JSONObject()
+                .put("id", id)
+                .put("title", titleForMessages(messages))
+                .put("updated", System.currentTimeMillis())
+                .put("messages", messages))
+            sessionsPrefs.edit().putString("current_id", id).putString("sessions", sessions.toString()).apply()
+        } else if (!currentExists) {
+            val last = sessions.optJSONObject(sessions.length() - 1)
+            val id = last?.optString("id") ?: java.util.UUID.randomUUID().toString()
+            sessionsPrefs.edit().putString("current_id", id).apply()
+            if (last != null) historyPrefs.edit().putString("messages", last.optJSONArray("messages")?.toString() ?: "[]").apply()
+        }
+    }
+
+    private fun refreshChatSummaries() {
+        val sessions = readSessions()
+        val items = (0 until sessions.length()).mapNotNull { sessions.optJSONObject(it) }
+            .mapNotNull { item ->
+                val id = item.optString("id")
+                if (id.isBlank()) null else ChatSummary(
+                    id = id,
+                    title = item.optString("title", "Saved conversation"),
+                    updatedAt = item.optLong("updated", 0L)
+                )
+            }.sortedByDescending { it.updatedAt }
+        chatSummaries.clear()
+        chatSummaries.addAll(items)
+    }
+
+    private fun persistCurrentSession() {
+        ensureSessionStore()
+        val currentId = sessionsPrefs.getString("current_id", null) ?: return
+        val messages = runCatching { JSONArray(historyPrefs.getString("messages", "[]") ?: "[]") }.getOrElse { JSONArray() }
+        val sessions = readSessions()
+        var found = false
+        for (index in 0 until sessions.length()) {
+            val item = sessions.optJSONObject(index) ?: continue
+            if (item.optString("id") == currentId) {
+                item.put("title", titleForMessages(messages))
+                item.put("updated", System.currentTimeMillis())
+                item.put("messages", messages)
+                found = true
+                break
+            }
+        }
+        if (!found) {
+            sessions.put(JSONObject()
+                .put("id", currentId)
+                .put("title", titleForMessages(messages))
+                .put("updated", System.currentTimeMillis())
+                .put("messages", messages))
+        }
+        val ordered = (0 until sessions.length()).mapNotNull { sessions.optJSONObject(it) }
+            .sortedByDescending { it.optLong("updated", 0L) }
+            .take(30)
+        val trimmed = JSONArray()
+        ordered.forEach { trimmed.put(it) }
+        sessionsPrefs.edit().putString("sessions", trimmed.toString()).apply()
+        refreshChatSummaries()
+    }
+
     private fun startNewConversation() {
         if (isGenerating || isLoadingModel) return
+        persistCurrentSession()
+        val id = java.util.UUID.randomUUID().toString()
         val starter = JSONArray().put(
             JSONObject().put("role", "assistant").put("text", "A fresh private conversation is ready.")
         )
-        getSharedPreferences("redai_chat_history", Context.MODE_PRIVATE)
-            .edit().putString("messages", starter.toString()).apply()
+        val sessions = readSessions()
+        sessions.put(JSONObject()
+            .put("id", id)
+            .put("title", "New conversation")
+            .put("updated", System.currentTimeMillis())
+            .put("messages", starter))
+        sessionsPrefs.edit().putString("current_id", id).putString("sessions", sessions.toString()).apply()
+        historyPrefs.edit().putString("messages", starter.toString()).apply()
+        refreshChatSummaries()
         lifecycleScope.launch { autoLoadSavedModel(reset = true, restoreHistory = false) }
+    }
+
+    private fun switchConversation(id: String) {
+        if (isGenerating || isLoadingModel) return
+        persistCurrentSession()
+        val sessions = readSessions()
+        val target = (0 until sessions.length()).mapNotNull { sessions.optJSONObject(it) }
+            .firstOrNull { it.optString("id") == id } ?: return
+        sessionsPrefs.edit().putString("current_id", id).apply()
+        historyPrefs.edit().putString("messages", target.optJSONArray("messages")?.toString() ?: "[]").apply()
+        refreshChatSummaries()
+        lifecycleScope.launch { autoLoadSavedModel(reset = true, restoreHistory = true) }
+    }
+
+    private fun deleteConversation(id: String) {
+        if (isGenerating || isLoadingModel) return
+        persistCurrentSession()
+        val sessions = readSessions()
+        val remaining = (0 until sessions.length()).mapNotNull { sessions.optJSONObject(it) }
+            .filterNot { it.optString("id") == id }
+            .sortedByDescending { it.optLong("updated", 0L) }
+        val currentId = sessionsPrefs.getString("current_id", null)
+        val deletingCurrent = currentId == id
+        val nextSessions = JSONArray()
+        remaining.forEach { nextSessions.put(it) }
+        if (remaining.isEmpty()) {
+            val newId = java.util.UUID.randomUUID().toString()
+            val starter = JSONArray().put(JSONObject().put("role", "assistant").put("text", "A fresh private conversation is ready."))
+            val session = JSONObject().put("id", newId).put("title", "New conversation")
+                .put("updated", System.currentTimeMillis()).put("messages", starter)
+            nextSessions.put(session)
+            sessionsPrefs.edit().putString("current_id", newId).putString("sessions", nextSessions.toString()).apply()
+            historyPrefs.edit().putString("messages", starter.toString()).apply()
+            refreshChatSummaries()
+            lifecycleScope.launch { autoLoadSavedModel(reset = true, restoreHistory = false) }
+        } else {
+            val nextCurrent = if (deletingCurrent) remaining.first() else remaining.firstOrNull { it.optString("id") == currentId } ?: remaining.first()
+            sessionsPrefs.edit().putString("current_id", nextCurrent.optString("id")).putString("sessions", nextSessions.toString()).apply()
+            if (deletingCurrent) {
+                historyPrefs.edit().putString("messages", nextCurrent.optJSONArray("messages")?.toString() ?: "[]").apply()
+                lifecycleScope.launch { autoLoadSavedModel(reset = true, restoreHistory = true) }
+            }
+            refreshChatSummaries()
+        }
     }
 
     private suspend fun autoLoadSavedModel(reset: Boolean = false, restoreHistory: Boolean = true) {
