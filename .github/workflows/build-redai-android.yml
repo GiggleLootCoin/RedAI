@@ -110,16 +110,16 @@ jobs:
           unzip -l "$APK" | grep -q "assets/RedAI.gguf"
           unzip -l "$APK" | grep -q "assets/reds_ways_of_thinking_canonical.jsonl"
           unzip -l "$APK" | grep -q "assets/RED AI MODEL NOTICE.txt"
-          unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama.so"
-          unzip -l "$APK" | grep -q "lib/arm64-v8a/libllama_jni.so"
-          unzip -l "$APK" | grep -q "lib/arm64-v8a/libggml-cpu.so"
-          grep -Fq 'append(userText)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          unzip -l "$APK" | grep -Eq "lib/arm64-v8a/libsmollm(_v8.*)?\\.so"
           grep -Fq '/no_think' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'You are RedAI, a distinct AI created and personalized by Red' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'You are not Red' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'SmolLM.InferenceParams' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'getResponseAsFlow' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'flowOn(Dispatchers.Default)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'engine.stop()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'engine.getResponseGenerationSpeed()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'contextSize = 1536L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'If asked about the foundation model, explain that your underlying foundation model is the one represented by the GGUF file currently loaded' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Do not automatically accept official accounts or automatically reject them' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'Akashic Records' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'CREATED WITH LOVE BY LittleRedBigSmile' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'class WebSearchService' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -q 'AES/GCM/NoPadding' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
@@ -128,10 +128,10 @@ jobs:
           grep -q 'searchTavily' android-ui/app/src/main/java/com/giggleloot/redai/WebSearchService.kt
           grep -Fq 'temporary = File(dir, "RedAI.gguf.part")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'The bundled GGUF failed its SHA-256 or file-format check.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'redWaysOfThinkingPrompt()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'redWaysOfThinkingPrompt(query)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'Do not volunteer technical foundation-model names' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -q 'versionName = "5.0"' android-ui/app/build.gradle.kts
+          grep -Fq 'SmolChatAndroidLib:V2.1' android-ui/app/build.gradle.kts
           grep -q '@drawable/ic_redai_launcher' android-ui/app/src/main/AndroidManifest.xml
           test -s android-ui/app/src/main/res/drawable/ic_redai_launcher.xml
           grep -q 'applicationId = "com.giggleloot.redai.v4"' android-ui/app/build.gradle.kts
