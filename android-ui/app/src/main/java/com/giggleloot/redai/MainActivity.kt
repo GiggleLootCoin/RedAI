@@ -487,7 +487,11 @@ fun RedAIApp(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(black)
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(Color(0xFF17060A), Color(0xFF08080B), Color(0xFF020203))
+                    )
+                )
         ) {
             // Correct RedAI identity header: no unrelated product branding.
             Row(
@@ -498,12 +502,12 @@ fun RedAIApp(
                             listOf(Color(0xFF16070B), panel, Color(0xFF09090C))
                         )
                     )
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = 18.dp, vertical = 17.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.size(46.dp),
-                    shape = RoundedCornerShape(15.dp),
+                    modifier = Modifier.size(52.dp),
+                    shape = RoundedCornerShape(18.dp),
                     color = red.copy(alpha = 0.14f),
                     border = BorderStroke(1.dp, red.copy(alpha = 0.72f))
                 ) {
@@ -512,23 +516,31 @@ fun RedAIApp(
                             "R",
                             color = redBright,
                             fontWeight = FontWeight.Black,
-                            style = MaterialTheme.typography.headlineSmall
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontSize = 30.sp
                         )
                     }
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(13.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
                         "RedAI",
                         color = white,
                         fontWeight = FontWeight.Black,
-                        style = MaterialTheme.typography.headlineSmall,
-                        letterSpacing = (-0.6).sp
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontSize = 28.sp,
+                        letterSpacing = (-0.9).sp
                     )
                     Text(
                         "CREATED WITH LOVE BY LittleRedBigSmile",
                         color = redBright,
                         fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelSmall,
+                        letterSpacing = 0.35.sp
+                    )
+                    Text(
+                        "PRIVATE • LOCAL • YOUR CREATIVE PARTNER",
+                        color = muted,
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -753,7 +765,7 @@ fun RedAIApp(
                     onClick = { showSettings = true },
                     modifier = Modifier.padding(start = 10.dp)
                 ) {
-                    Text("CONTROL", color = muted, fontWeight = FontWeight.Bold)
+                    Text("SETTINGS", color = muted, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
                 }
             }
 
@@ -881,14 +893,14 @@ fun RedAIApp(
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = white),
                     border = BorderStroke(1.dp, line)
-                ) { Text("FILE", fontWeight = FontWeight.Bold) }
+                ) { Text("ATTACH FILE", fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp) }
                 OutlinedButton(
                     onClick = onVoice,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = white),
                     border = BorderStroke(1.dp, line)
-                ) { Text("VOICE", fontWeight = FontWeight.Bold) }
+                ) { Text("TALK", fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp) }
             }
 
             Row(
@@ -944,7 +956,7 @@ fun RedAIApp(
                         contentColor = Color.White
                     )
                 ) {
-                    Text(if (busy) "…" else "SEND", fontWeight = FontWeight.Black)
+                    Text(if (busy) "…" else "SEND  ›", fontWeight = FontWeight.Black, letterSpacing = 0.5.sp)
                 }
             }
         }
