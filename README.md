@@ -1,6 +1,6 @@
 # RedAI
 
-Standalone local AI model for RedUI.
+RedAI Android: the RedUI interface with the RedAI model bundled and installed at build time. It accepts no replacement models.
 
 ## Current build target
 
@@ -37,7 +37,6 @@ RedAI is created and personalized by Red, also known as LittleRedBigSmile. The u
 - Output: **104 pieces for ordinary replies; up to 176 for explicitly detailed replies**
 - CPU threads: **4**, with actual throughput displayed in the app
 - Memory mapping: **enabled**
-- Flash attention: **when supported**
 - GPU layers: **0 by default for stability**
 
 The bundled MiniCPM5-1B Q4_K_M checkpoint is approximately 688 MB and was selected as the stronger personalized 1B-class candidate. Its no-think template avoids spending the phone's limited CPU budget on hidden reasoning for ordinary chat. Short replies are capped to reduce unnecessary decoding; longer limits are used only when the request calls for detail. The app streams generated text and reports measured tokens per second. Actual Galaxy A12 speed still requires on-device measurement.
