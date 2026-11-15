@@ -163,13 +163,14 @@ class MainActivity : ComponentActivity() {
                     params = SmolLM.InferenceParams(
                         contextSize = 1536L,
                         numThreads = 4,
-                        temperature = 0.68f,
-                        topP = 0.85f,
-                        topK = 24,
+                        temperature = 0.70f,
+                        topP = 0.95f,
+                        topK = 40,
                         repeatPenalty = 1.08f,
                         storeChats = true,
                         useMmap = true,
-                        useMlock = false
+                        useMlock = false,
+                        chatTemplate = miniCpm5NoThinkTemplate()
                     )
                 )
             }
@@ -186,6 +187,16 @@ class MainActivity : ComponentActivity() {
             isLoadingModel = false
         }
     }
+
+    private fun miniCpm5NoThinkTemplate(): String = """
+        {{- bos_token }}
+        {%- for message in messages %}
+        {{- '<|im_start|>' + message['role'] + '\\n' + message['content'] + '<|im_end|>\\n' }}
+        {%- endfor %}
+        {%- if add_generation_prompt %}
+        {{- '<|im_start|>assistant\\n<think>\\n\\n</think>\\n\\n' }}
+        {%- endif %}
+    """.trimIndent()
 
     private fun baseSystemPrompt(): String = """
         You are RedAI, an AI assistant created and personalized by Red, also known as LittleRedBigSmile.
@@ -214,7 +225,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private suspend fun copyBundledModel(): File = withContext(Dispatchers.IO) {
-        val expectedSha256 = "f5b14da98939b60bbe1019a964eba656407e1e0b64f1fe3003ff6d650e93bfec"
+        val expectedSha256 = "eca3959621ebc7c4dc49f8f7bcdb015642e6c37d7f8a26dcd4d95d9072d40052"
         val dir = File(filesDir, "models").apply { mkdirs() }
         val destination = File(dir, "RedAI.gguf")
         val temporary = File(dir, "RedAI.gguf.part")
