@@ -127,6 +127,8 @@ jobs:
           grep -Fq 'private suspend fun extractImageText' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'TextRecognition.getClient' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'appendHistoryExchange' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'generate(modelPrompt, allowSearch = false)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'val searchRequested = allowSearch && needsFreshInfo(query)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'private fun persistCurrentSession()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'private fun switchConversation(id: String)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'private fun deleteConversation(id: String)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
