@@ -3,6 +3,16 @@ package com.giggleloot.redai
 import android.content.Intent
 import android.net.Uri
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
+import android.provider.OpenableColumns
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import org.json.JSONArray
@@ -49,7 +59,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-data class Message(val role: String, val text: String)
+data class Message(val role: String, val text: String, val context: String? = null)
 
 class MainActivity : ComponentActivity() {
     private val engine = SmolLM()
@@ -133,19 +143,142 @@ class MainActivity : ComponentActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 9003 && resultCode == RESULT_OK) {
             val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-            if (!spoken.isNullOrBlank()) generate(spoken) { answer, finished, _ -> if (finished) tts?.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "redai") }
+            if (!spoken.isNullOrBlank()) {
+                generate(spoken) { answer, finished, speed ->
+                    if (finished) {
+                        appendHistoryExchange(spoken, answer, spoken)
+                        tts?.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "redai")
+                        render(if (speed > 0f) "Voice reply complete • ${String.format(Locale.US, "%.1f", speed)} tok/s" else "Voice reply complete.")
+                    }
+                }
+            }
             return
         }
         if (requestCode == 9002 && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
             lifecycleScope.launch {
-                val name = uri.lastPathSegment ?: "file"
-                val text = withContext(Dispatchers.IO) { runCatching { contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText().take(20000) }.orEmpty() }.getOrDefault("") }
-                generate("The user attached a file named " + name + ". Analyze this file content and help the user. FILE CONTENT:\n" + text) { answer, finished, _ -> if (finished) render(answer) }
+                val name = attachmentDisplayName(uri)
+                try {
+                    val mime = contentResolver.getType(uri).orEmpty()
+                    val extracted = extractAttachmentText(uri, name, mime).take(2400)
+                    if (extracted.isBlank()) throw IllegalArgumentException("No readable text was found in this file.")
+                    val displayPrompt = "Analyse attached file: $name"
+                    val modelPrompt = buildString {
+                        append("Analyse the attached file named ")
+                        append(name)
+                        append(". The following text was extracted locally. For an image this is OCR only, not visual scene understanding. Be clear about missing or truncated content.\\n\\n")
+                        append(extracted)
+                    }
+                    generate(modelPrompt) { answer, finished, speed ->
+                        if (finished) {
+                            appendHistoryExchange(displayPrompt, answer, modelPrompt)
+                            render(if (speed > 0f) "File processed locally • ${String.format(Locale.US, "%.1f", speed)} tok/s" else "File processed locally.")
+                        }
+                    }
+                } catch (e: Exception) {
+                    render("Could not read this attachment: " + (e.message ?: "unsupported file"))
+                }
             }
             return
         }
     }
+
+    private fun appendHistoryExchange(userText: String, assistantText: String, userContext: String = userText) {
+        val history = getSharedPreferences("redai_chat_history", Context.MODE_PRIVATE)
+        val saved = runCatching { JSONArray(history.getString("messages", "[]") ?: "[]") }.getOrElse { JSONArray() }
+        saved.put(JSONObject().put("role", "user").put("text", userText).put("context", userContext))
+        saved.put(JSONObject().put("role", "assistant").put("text", assistantText))
+        while (saved.length() > 200) saved.remove(0)
+        history.edit().putString("messages", saved.toString()).apply()
+    }
+
+    private fun attachmentDisplayName(uri: Uri): String {
+        val cursor = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0) return it.getString(index) ?: "attachment"
+            }
+        }
+        return uri.lastPathSegment?.substringAfterLast('/') ?: "attachment"
+    }
+
+    private suspend fun extractAttachmentText(uri: Uri, name: String, mime: String): String {
+        val extension = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
+        return when {
+            mime == "application/pdf" || extension == "pdf" -> extractPdfText(uri)
+            mime.startsWith("image/") -> extractImageText(uri)
+            mime.startsWith("text/") || mime == "application/json" ||
+                extension in setOf("txt", "md", "csv", "json", "xml", "html", "htm", "log", "yaml", "yml", "kt", "java", "py", "js", "css") ->
+                withContext(Dispatchers.IO) {
+                    contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { reader ->
+                        val output = StringBuilder()
+                        val buffer = CharArray(2048)
+                        while (output.length < 2400) {
+                            val count = reader.read(buffer, 0, minOf(buffer.size, 2400 - output.length))
+                            if (count <= 0) break
+                            output.append(buffer, 0, count)
+                        }
+                        output.toString()
+                    } ?: throw IllegalArgumentException("The selected file could not be opened.")
+                }
+            else -> throw IllegalArgumentException("Supported attachments are text files, PDFs and images. Word documents and other formats are not supported yet.")
+        }
+    }
+
+    private suspend fun extractImageText(uri: Uri): String {
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        return try {
+            val image = InputImage.fromFilePath(this, uri)
+            recognizeText(image, recognizer)
+        } finally {
+            recognizer.close()
+        }
+    }
+
+    private suspend fun extractPdfText(uri: Uri): String = withContext(Dispatchers.IO) {
+        val descriptor = contentResolver.openFileDescriptor(uri, "r")
+            ?: throw IllegalArgumentException("The PDF could not be opened.")
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        try {
+            PdfRenderer(descriptor).use { renderer ->
+                val output = StringBuilder()
+                val pageLimit = minOf(renderer.pageCount, 5)
+                for (pageNumber in 0 until pageLimit) {
+                    val page = renderer.openPage(pageNumber)
+                    val bitmap = Bitmap.createBitmap(
+                        (page.width * minOf(1.5f, 1400f / page.width)).toInt().coerceAtLeast(1),
+                        (page.height * minOf(1.5f, 1400f / page.width)).toInt().coerceAtLeast(1),
+                        Bitmap.Config.ARGB_8888
+                    )
+                    try {
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        val text = recognizeText(InputImage.fromBitmap(bitmap, 0), recognizer)
+                        output.append("\\n[Page ${pageNumber + 1}]\\n").append(text)
+                    } finally {
+                        bitmap.recycle()
+                        page.close()
+                    }
+                    if (output.length >= 2400) break
+                }
+                if (renderer.pageCount > pageLimit) output.append("\\n[Only the first five PDF pages were processed.]")
+                output.toString().take(2400)
+            }
+        } finally {
+            recognizer.close()
+        }
+    }
+
+    private suspend fun recognizeText(image: InputImage, recognizer: TextRecognizer): String =
+        suspendCancellableCoroutine { continuation ->
+            recognizer.process(image)
+                .addOnSuccessListener { result ->
+                    if (continuation.isActive) continuation.resume(result.text)
+                }
+                .addOnFailureListener { error ->
+                    if (continuation.isActive) continuation.resumeWithException(error)
+                }
+        }
 
     private fun startNewConversation() {
         if (isGenerating || isLoadingModel) return
@@ -229,7 +362,7 @@ class MainActivity : ComponentActivity() {
             if (role in setOf("user", "assistant") && text.isNotBlank()) Message(role, text) else null
         }.takeLast(6)
         recent.forEach { message ->
-            if (message.role == "user") engine.addUserMessage(message.text)
+            if (message.role == "user") engine.addUserMessage(message.context ?: message.text)
             else engine.addAssistantMessage(message.text)
         }
     }
@@ -368,7 +501,7 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             try {
-                val query = userText.substringAfterLast("User's newest message: ", userText).trim().take(500)
+                val query = userText.substringAfterLast("User's newest message: ", userText).trim().take(2400)
                 val searchRequested = needsFreshInfo(query)
                 val online = if (searchRequested && webEnabled) withContext(Dispatchers.IO) { networkAvailable() } else false
                 val searchResult = if (searchRequested && webEnabled && online) {
@@ -475,7 +608,8 @@ fun RedAIApp(
                     val item = saved.optJSONObject(index) ?: return@mapNotNull null
                     val role = item.optString("role")
                     val text = item.optString("text")
-                    if (role in setOf("user", "assistant") && text.isNotBlank()) Message(role, text) else null
+                    val savedContext = item.optString("context").takeIf { it.isNotBlank() }
+                    if (role in setOf("user", "assistant") && text.isNotBlank()) Message(role, text, savedContext) else null
                 }.takeLast(200)
             }.getOrDefault(emptyList()).ifEmpty {
                 listOf(Message("assistant", "RedAI is preparing its private on-device brain. Your chats stay on this phone."))
@@ -490,7 +624,7 @@ fun RedAIApp(
         if (busy) return@LaunchedEffect
         val saved = JSONArray()
         messages.filter { it.text.isNotBlank() }.takeLast(200).forEach { message ->
-            saved.put(JSONObject().put("role", message.role).put("text", message.text))
+            saved.put(JSONObject().put("role", message.role).put("text", message.text).put("context", message.context))
         }
         historyPrefs.edit().putString("messages", saved.toString()).apply()
     }
