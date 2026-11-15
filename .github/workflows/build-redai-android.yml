@@ -127,6 +127,10 @@ jobs:
           grep -Fq 'private suspend fun extractImageText' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'TextRecognition.getClient' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'appendHistoryExchange' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'private fun persistCurrentSession()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'private fun switchConversation(id: String)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'private fun deleteConversation(id: String)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'SAVED CHATS' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'image-labeling' android-ui/app/build.gradle.kts
           grep -Fq 'contextSize = 1536L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'If asked about the foundation model, explain that your underlying foundation model is the one represented by the GGUF file currently loaded' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
@@ -141,7 +145,7 @@ jobs:
           grep -Fq 'The bundled GGUF failed its SHA-256 or file-format check.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'redWaysOfThinkingPrompt(query)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "5.0"' android-ui/app/build.gradle.kts
+          grep -q 'versionName = "5.1"' android-ui/app/build.gradle.kts
           grep -Fq 'SmolChatAndroidLib:V2.1' android-ui/app/build.gradle.kts
           grep -q '@drawable/ic_redai_launcher' android-ui/app/src/main/AndroidManifest.xml
           test -s android-ui/app/src/main/res/drawable/ic_redai_launcher.xml
@@ -176,14 +180,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          cp android-ui/app/build/outputs/apk/debug/app-debug.apk release/RedAI-Android-v5.0.apk
+          cp android-ui/app/build/outputs/apk/debug/app-debug.apk release/RedAI-Android-v5.1.apk
           sha256sum release/RedAI-Android-v5.0.apk > release/SHA256SUMS.txt
           sha256sum -c release/SHA256SUMS.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RedAI-Android-v5.0-arm64
+          name: RedAI-Android-v5.1-arm64
           path: |
             release/RedAI-Android-v5.0.apk
             release/SHA256SUMS.txt
@@ -192,9 +196,9 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: redai-android-v5.0
+          tag_name: redai-android-v5.1
           target_commitish: ${{ github.sha }}
-          name: RedAI Android v5.0 — LittleRedBigSmile Edition
+          name: RedAI Android v5.1 — LittleRedBigSmile Edition
           body: |
             RedAI Android 5.0 with the fine-tuned MiniCPM5-1B Q4_K_M RedAI GGUF, ARM64 CPU-feature-aware streaming llama.cpp runtime, compact relevant framework context, persistent recent conversation, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations and local model verification.
 
