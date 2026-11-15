@@ -75,8 +75,9 @@ jobs:
           "$LLAMA_CLI" \
             -m android-ui/app/src/main/assets/RedAI.gguf \
             --jinja --single-turn --no-display-prompt \
-            -n 48 --temp 0.1 --top-p 0.8 --top-k 20 \
-            -p "Say hello in one clear sentence. /no_think" > "$OUT"
+            --chat-template-kwargs '{"enable_thinking":false}' --reasoning off \
+            -n 48 --temp 0.7 --top-p 0.95 --top-k 40 \
+            -p "Say hello in one clear sentence." > "$OUT"
           cat "$OUT"
           grep -Eq '[[:alnum:]]' "$OUT"
           rm -f "$OUT"
@@ -178,7 +179,7 @@ jobs:
         with:
           name: RedAI-Android-v5.0-arm64
           path: |
-            release/RedAI-Android-v4.1.apk
+            release/RedAI-Android-v5.0.apk
             release/SHA256SUMS.txt
 
       - name: Publish GitHub release
@@ -189,11 +190,11 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: RedAI Android v5.0 — LittleRedBigSmile Edition
           body: |
-            RedAI Android 4.0 with the bundled Qwen3.5-0.8B Q4_K_M GGUF, automatic first-launch local model setup, Red's 38 canonical Ways Of Thinking statements in the system context, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations, and ARM64 llama.cpp runtime.
+            RedAI Android 5.0 with the fine-tuned MiniCPM5-1B Q4_K_M RedAI GGUF, ARM64 CPU-feature-aware streaming llama.cpp runtime, compact relevant framework context, persistent recent conversation, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations and local model verification.
 
-            The foundation weights are Qwen's; Red created and personalized the RedAI product and assistant identity.
+            Foundation model: MiniCPM5-1B (Apache-2.0). Red's fine-tuned RedAI checkpoint and the RedAI product/persona integration are built and personalized by LittleRedBigSmile.
           files: |
-            release/RedAI-Android-v4.1.apk
+            release/RedAI-Android-v5.0.apk
             release/SHA256SUMS.txt
           fail_on_unmatched_files: true
           overwrite_files: true
