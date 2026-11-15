@@ -5,9 +5,10 @@ on:
   pull_request:
     branches: ["main"]
   push:
-    branches: ["main", "redai-redesign-v4"]
+    branches: ["main", "redai-redesign-v4", "redai-rebuild-v5"]
     paths:
       - "android-ui/**"
+      - "README.md"
       - "bridge/**"
       - "WEB_SEARCH.md"
       - ".github/workflows/build-redai-android.yml"
@@ -130,7 +131,7 @@ jobs:
           grep -Fq 'redWaysOfThinkingPrompt()' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Do not volunteer technical foundation-model names' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "4.1"' android-ui/app/build.gradle.kts
+          grep -q 'versionName = "5.0"' android-ui/app/build.gradle.kts
           grep -q '@drawable/ic_redai_launcher' android-ui/app/src/main/AndroidManifest.xml
           test -s android-ui/app/src/main/res/drawable/ic_redai_launcher.xml
           grep -q 'applicationId = "com.giggleloot.redai.v4"' android-ui/app/build.gradle.kts
@@ -164,25 +165,25 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          cp android-ui/app/build/outputs/apk/debug/app-debug.apk release/RedAI-Android-v4.1.apk
+          cp android-ui/app/build/outputs/apk/debug/app-debug.apk release/RedAI-Android-v5.0.apk
           sha256sum release/RedAI-Android-v4.1.apk > release/SHA256SUMS.txt
           sha256sum -c release/SHA256SUMS.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RedAI-Android-v4.1-arm64
+          name: RedAI-Android-v5.0-arm64
           path: |
             release/RedAI-Android-v4.1.apk
             release/SHA256SUMS.txt
 
       - name: Publish GitHub release
-        if: github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: redai-android-v4.1
+          tag_name: redai-android-v5.0
           target_commitish: ${{ github.sha }}
-          name: RedAI Android v4.1 — LittleRedBigSmile Edition
+          name: RedAI Android v5.0 — LittleRedBigSmile Edition
           body: |
             RedAI Android 4.0 with the bundled Qwen3.5-0.8B Q4_K_M GGUF, automatic first-launch local model setup, Red's 38 canonical Ways Of Thinking statements in the system context, optional DuckDuckGo/Wikipedia/Tavily live search, honest offline handling, source citations, and ARM64 llama.cpp runtime.
 
