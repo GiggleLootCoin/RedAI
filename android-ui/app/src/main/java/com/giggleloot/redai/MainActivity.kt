@@ -729,6 +729,10 @@ class MainActivity : ComponentActivity() {
 fun RedAIApp(
     onRetryModel: () -> Unit,
     onNewChat: () -> Unit,
+    onSwitchChat: (String) -> Unit,
+    onDeleteChat: (String) -> Unit,
+    chatSummaries: List<ChatSummary>,
+    onMessagesChanged: () -> Unit,
     onSend: (String, (String, Boolean, Float) -> Unit) -> Unit,
     onSpeak: (String) -> Unit,
     onVoice: () -> Unit,
@@ -764,6 +768,8 @@ fun RedAIApp(
     }
 
     var showSettings by remember { mutableStateOf(false) }
+    var showChats by remember { mutableStateOf(false) }
+    var pendingDeleteId by remember { mutableStateOf<String?>(null) }
     var apiKeyInput by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     LaunchedEffect(messages, busy) {
@@ -773,6 +779,7 @@ fun RedAIApp(
             saved.put(JSONObject().put("role", message.role).put("text", message.text).put("context", message.context))
         }
         historyPrefs.edit().putString("messages", saved.toString()).apply()
+        onMessagesChanged()
     }
     var modelSpeed by remember { mutableStateOf(0f) }
     val listState = rememberLazyListState()
@@ -944,10 +951,13 @@ fun RedAIApp(
                         )
                     }
                     AssistChip(
-                        onClick = {
-                            messages = listOf(Message("assistant", "A fresh private conversation is ready."))
-                            onNewChat()
-                        },
+                        onClick = { showChats = true },
+                        enabled = !busy && isModelLoaded,
+                        label = { Text("CHATS", fontWeight = FontWeight.Bold) },
+                        colors = AssistChipDefaults.assistChipColors(containerColor = panelRaised, labelColor = white)
+                    )
+                    AssistChip(
+                        onClick = { onNewChat() },
                         enabled = !busy && isModelLoaded,
                         label = { Text("NEW CHAT", fontWeight = FontWeight.Bold) },
                         colors = AssistChipDefaults.assistChipColors(
@@ -974,6 +984,70 @@ fun RedAIApp(
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
+            }
+
+            if (showChats) {
+                AlertDialog(
+                    onDismissRequest = { showChats = false },
+                    title = { Text("SAVED CHATS", color = redBright, fontWeight = FontWeight.Black) },
+                    text = {
+                        if (chatSummaries.isEmpty()) {
+                            Text("No saved conversations yet.", color = muted)
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(chatSummaries, key = { it.id }) { chat ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(chat.title, color = white, fontWeight = FontWeight.SemiBold, maxLines = 2)
+                                            Text("Saved on this phone", color = muted, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        TextButton(onClick = {
+                                            showChats = false
+                                            onSwitchChat(chat.id)
+                                        }) { Text("OPEN", color = redBright, fontWeight = FontWeight.Bold) }
+                                        TextButton(onClick = { pendingDeleteId = chat.id }) {
+                                            Text("DELETE", color = muted, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showChats = false }) {
+                            Text("DONE", color = redBright, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    containerColor = panel,
+                    titleContentColor = white,
+                    textContentColor = white
+                )
+            }
+            if (pendingDeleteId != null) {
+                val deleting = chatSummaries.firstOrNull { it.id == pendingDeleteId }
+                AlertDialog(
+                    onDismissRequest = { pendingDeleteId = null },
+                    title = { Text("DELETE THIS CHAT?", color = redBright, fontWeight = FontWeight.Black) },
+                    text = { Text("This removes the saved conversation from this phone.", color = muted) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            pendingDeleteId?.let(onDeleteChat)
+                            pendingDeleteId = null
+                        }) { Text("DELETE", color = redBright, fontWeight = FontWeight.Black) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { pendingDeleteId = null }) { Text("KEEP", color = white) }
+                    },
+                    containerColor = panel,
+                    titleContentColor = white,
+                    textContentColor = white
+                )
             }
 
             if (showSettings) {
