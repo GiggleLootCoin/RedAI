@@ -4,9 +4,9 @@ Standalone local AI model for RedUI.
 
 ## Current build target
 
-- Foundation: **Qwen3.5-0.8B Q4_K_M**
+- Foundation: **MiniCPM5-1B Q4_K_M**
 - Personalization: **Red's Ways Of Thinking**
-- Fine-tuning: **LoRA with assistant-completion-only loss**
+- Personalization training: **RedAI MiniCPM5-1B LoRA, merged and quantized to GGUF Q4_K_M**
 - Quantization: **GGUF Q4_K_M**
 - Runtime: **SmolChatAndroidLib V2.1 / llama.cpp, ARM64 CPU feature detection, streaming**
 - Runtime target: **Android 12 / Galaxy A12-class hardware**
@@ -18,7 +18,7 @@ The training pipeline is deliberately conservative because the personalization c
 
 - trains only on assistant completion tokens instead of wasting capacity learning to reproduce system/user prompts;
 - uses the Qwen chat template consistently for training and llama.cpp verification;
-- keeps the bundled foundation at Qwen3.5-0.8B Q4_K_M, matching the exact model downloaded, hash-verified, smoke-tested and packaged by the Android workflow;
+- uses the separately trained RedAI MiniCPM5-1B checkpoint, with Red's identity and framework material included in the fine-tuning corpus and runtime prompt;
 - preserves Red's Ways Of Thinking as personalized material while teaching the model to distinguish framework/perspective from independently verified fact;
 - includes identity, correction, honesty, tool-use, privacy, planning, math, ambiguity, and failure-reporting anchors;
 - verifies non-empty output, identity, creator, normal chat, math, capabilities, app/project naming, current-information honesty, and hidden response-planning leakage before packaging.
@@ -40,7 +40,7 @@ RedAI is created and personalized by Red, also known as LittleRedBigSmile. The u
 - Flash attention: **when supported**
 - GPU layers: **0 by default for stability**
 
-The bundled Qwen3.5-0.8B model is intentionally kept small for the phone's memory and CPU limits. Short replies are capped to reduce unnecessary decoding; longer limits are used only when the request calls for detail. The app streams generated text and reports measured tokens per second. Actual Galaxy A12 speed still requires on-device measurement.
+The bundled MiniCPM5-1B Q4_K_M checkpoint is approximately 688 MB and was selected as the stronger personalized 1B-class candidate. Its no-think template avoids spending the phone's limited CPU budget on hidden reasoning for ordinary chat. Short replies are capped to reduce unnecessary decoding; longer limits are used only when the request calls for detail. The app streams generated text and reports measured tokens per second. Actual Galaxy A12 speed still requires on-device measurement.
 
 ## Free build
 
@@ -48,7 +48,7 @@ RedAI is built from the repository using GitHub Actions and open-source tooling.
 
 ## Android v5 runtime
 
-The Android app uses the Apache-2.0 SmolChatAndroidLib V2.1 runtime, which selects an ARM64 native build based on CPU features and supports streamed token output. The app keeps the model bundled and local, restores a short recent conversation, and uses a smaller relevant subset of Red's Ways Of Thinking instead of inserting all 38 statements into every related prompt. The app displays measured generation speed. A successful CI build is not a substitute for testing on the physical Galaxy A12.
+The Android app uses the Apache-2.0 SmolChatAndroidLib V2.1 runtime, which selects an ARM64 native build based on CPU features and supports streamed token output. The bundled GGUF is the fine-tuned RedAI MiniCPM5-1B candidate, not the unpersonalized Qwen3.5-0.8B test model. The app keeps the model bundled and local, restores a short recent conversation, and uses a smaller relevant subset of Red's Ways Of Thinking instead of inserting all 38 statements into every related prompt. The app displays measured generation speed. A successful CI build is not a substitute for testing on the physical Galaxy A12.
 
 ## Optional live web search
 
