@@ -166,7 +166,7 @@ class MainActivity : ComponentActivity() {
                     val modelPrompt = buildString {
                         append("Analyse the attached file named ")
                         append(name)
-                        append(". The following text was extracted locally. For an image this is OCR only, not visual scene understanding. Be clear about missing or truncated content.\\n\\n")
+                        append(". The following text was extracted locally. For an image this is OCR only, not visual scene understanding. Be clear about missing or truncated content.\n\n")
                         append(extracted)
                     }
                     generate(modelPrompt) { answer, finished, speed ->
@@ -254,14 +254,14 @@ class MainActivity : ComponentActivity() {
                     try {
                         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                         val text = recognizeText(InputImage.fromBitmap(bitmap, 0), recognizer)
-                        output.append("\\n[Page ${pageNumber + 1}]\\n").append(text)
+                        output.append("\n[Page ${pageNumber + 1}]\n").append(text)
                     } finally {
                         bitmap.recycle()
                         page.close()
                     }
                     if (output.length >= 2400) break
                 }
-                if (renderer.pageCount > pageLimit) output.append("\\n[Only the first five PDF pages were processed.]")
+                if (renderer.pageCount > pageLimit) output.append("\n[Only the first five PDF pages were processed.]")
                 output.toString().take(2400)
             }
         } finally {
