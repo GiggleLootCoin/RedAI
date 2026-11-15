@@ -32,13 +32,13 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Download and verify the selected Qwen3.5-0.8B Q4_K_M brain
+      - name: Download and verify the trained RedAI MiniCPM5-1B Q4_K_M brain
         run: |
           set -euo pipefail
           mkdir -p android-ui/app/src/main/assets
-          MODEL_URL="https://huggingface.co/lmstudio-community/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf"
+          MODEL_URL="https://github.com/GiggleLootCoin/RedAI/releases/download/redai-minicpm5-candidate/RedAI-MiniCPM5-1B-Q4_K_M.gguf"
           curl -L --fail --retry 5 --retry-all-errors --connect-timeout 30 --output android-ui/app/src/main/assets/RedAI.gguf "$MODEL_URL"
-          echo "f5b14da98939b60bbe1019a964eba656407e1e0b64f1fe3003ff6d650e93bfec  android-ui/app/src/main/assets/RedAI.gguf" | sha256sum --check
+          echo "eca3959621ebc7c4dc49f8f7bcdb015642e6c37d7f8a26dcd4d95d9072d40052  android-ui/app/src/main/assets/RedAI.gguf" | sha256sum --check
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -53,8 +53,8 @@ jobs:
               source.read_text(encoding="utf-8"), encoding="utf-8"
           )
           notice = Path("android-ui/app/src/main/assets/RED AI MODEL NOTICE.txt").read_text(encoding="utf-8")
-          assert "Apache License 2.0" in notice and "Qwen3.5-0.8B" in notice
-          print(f"Verified {model.stat().st_size:,}-byte Qwen3.5-0.8B GGUF and {len(rows)} canonical framework statements.")
+          assert "Apache License 2.0" in notice and "MiniCPM5-1B" in notice and "Fine-tuned RedAI candidate" in notice
+          print(f"Verified {model.stat().st_size:,}-byte trained MiniCPM5-1B GGUF and {len(rows)} canonical framework statements.")
           PY
 
       - name: Smoke-test the exact bundled GGUF with the app's llama.cpp version
@@ -142,7 +142,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, zipfile
           apk = "android-ui/app/build/outputs/apk/debug/app-debug.apk"
-          expected = "f5b14da98939b60bbe1019a964eba656407e1e0b64f1fe3003ff6d650e93bfec"
+          expected = "eca3959621ebc7c4dc49f8f7bcdb015642e6c37d7f8a26dcd4d95d9072d40052"
           with zipfile.ZipFile(apk) as z:
               model_name = next(n for n in z.namelist() if n.endswith("assets/RedAI.gguf"))
               digest = hashlib.sha256()
@@ -170,7 +170,7 @@ jobs:
           set -euo pipefail
           mkdir -p release
           cp android-ui/app/build/outputs/apk/debug/app-debug.apk release/RedAI-Android-v5.0.apk
-          sha256sum release/RedAI-Android-v4.1.apk > release/SHA256SUMS.txt
+          sha256sum release/RedAI-Android-v5.0.apk > release/SHA256SUMS.txt
           sha256sum -c release/SHA256SUMS.txt
 
       - name: Upload APK artifact
