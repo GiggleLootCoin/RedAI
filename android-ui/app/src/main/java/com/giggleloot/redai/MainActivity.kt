@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             RedAIApp(
                 onRetryModel = { lifecycleScope.launch { autoLoadSavedModel() } },
-                onNewChat = { if (!isGenerating) lifecycleScope.launch { autoLoadSavedModel(reset = true, restoreHistory = false) } },
+                onNewChat = { startNewConversation() },
                 onSend = { text, callback -> generate(text, callback) },
                 onSpeak = { text -> tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "redai") },
                 onVoice = { startVoiceInput() },
@@ -145,6 +145,16 @@ class MainActivity : ComponentActivity() {
             }
             return
         }
+    }
+
+    private fun startNewConversation() {
+        if (isGenerating || isLoadingModel) return
+        val starter = JSONArray().put(
+            JSONObject().put("role", "assistant").put("text", "A fresh private conversation is ready.")
+        )
+        getSharedPreferences("redai_chat_history", Context.MODE_PRIVATE)
+            .edit().putString("messages", starter.toString()).apply()
+        lifecycleScope.launch { autoLoadSavedModel(reset = true, restoreHistory = false) }
     }
 
     private suspend fun autoLoadSavedModel(reset: Boolean = false, restoreHistory: Boolean = true) {
@@ -473,16 +483,17 @@ fun RedAIApp(
         )
     }
 
-    LaunchedEffect(messages) {
+    var showSettings by remember { mutableStateOf(false) }
+    var apiKeyInput by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    LaunchedEffect(messages, busy) {
+        if (busy) return@LaunchedEffect
         val saved = JSONArray()
-        messages.takeLast(200).forEach { message ->
+        messages.filter { it.text.isNotBlank() }.takeLast(200).forEach { message ->
             saved.put(JSONObject().put("role", message.role).put("text", message.text))
         }
         historyPrefs.edit().putString("messages", saved.toString()).apply()
     }
-    var showSettings by remember { mutableStateOf(false) }
-    var apiKeyInput by remember { mutableStateOf("") }
-    var busy by remember { mutableStateOf(false) }
     var modelSpeed by remember { mutableStateOf(0f) }
     val listState = rememberLazyListState()
     val uriHandler = LocalUriHandler.current
