@@ -150,7 +150,7 @@ class MainActivity : ComponentActivity() {
                                 setRequestProperty("Content-Type", "application/json")
                             }
                         }
-                        try {
+                        return try {
                             if (body != null) connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
                             val code = connection.responseCode
                             val stream = if (code in 200..299) connection.inputStream else connection.errorStream
