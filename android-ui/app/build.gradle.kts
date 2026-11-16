@@ -6,12 +6,15 @@ plugins {
 android {
     namespace = "com.giggleloot.redai"
     compileSdk = 35
+    androidResources {
+        noCompress += "gguf"
+    }
     defaultConfig {
-        applicationId = "com.giggleloot.redai"
+        applicationId = "com.giggleloot.redai.v4"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "3.5"
+        versionCode = 16
+        versionName = "5.1"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -32,6 +35,5 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jsoup:jsoup:1.18.3")
     implementation("com.google.mlkit:text-recognition:16.0.1")
-    implementation("com.google.mlkit:image-labeling:17.0.9")
-    implementation("dev.ffmpegkit-maintained:llama-android:0.1.1")
+    implementation("com.github.woheller69:SmolChatAndroidLib:V2.1")
 }

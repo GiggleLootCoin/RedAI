@@ -1,14 +1,15 @@
 # RedAI
 
-Standalone local AI model for RedUI.
+RedAI Android: the RedUI interface with the RedAI model bundled and installed at build time. It accepts no replacement models.
 
 ## Current build target
 
-- Foundation: **Qwen3-1.7B**
+- Foundation: **MiniCPM5-1B Q4_K_M**
 - Personalization: **Red's Ways Of Thinking**
-- Fine-tuning: **LoRA with assistant-completion-only loss**
+- Personalization training: **RedAI MiniCPM5-1B LoRA, merged and quantized to GGUF Q4_K_M**
 - Quantization: **GGUF Q4_K_M**
-- Runtime target: **Android / Galaxy A12-class hardware**
+- Runtime: **SmolChatAndroidLib V2.1 / llama.cpp, ARM64 CPU feature detection, streaming**
+- Runtime target: **Android 12 / Galaxy A12-class hardware**
 - Design goal: **free, offline-first local inference**, with optional external tools only when explicitly invoked
 
 ## What was improved
@@ -16,8 +17,8 @@ Standalone local AI model for RedUI.
 The training pipeline is deliberately conservative because the personalization corpus is small. RedAI now:
 
 - trains only on assistant completion tokens instead of wasting capacity learning to reproduce system/user prompts;
-- uses the Qwen chat template consistently for training and llama.cpp verification;
-- keeps the foundation at Qwen3-1.7B, which is a stronger practical fit for the Galaxy A12 than moving to a much larger model;
+- uses the MiniCPM5 chat template consistently for training and llama.cpp verification;
+- uses the separately trained RedAI MiniCPM5-1B checkpoint, with Red's identity and framework material included in the fine-tuning corpus and runtime prompt;
 - preserves Red's Ways Of Thinking as personalized material while teaching the model to distinguish framework/perspective from independently verified fact;
 - includes identity, correction, honesty, tool-use, privacy, planning, math, ambiguity, and failure-reporting anchors;
 - verifies non-empty output, identity, creator, normal chat, math, capabilities, app/project naming, current-information honesty, and hidden response-planning leakage before packaging.
@@ -28,22 +29,25 @@ RedAI is created and personalized by Red, also known as LittleRedBigSmile. The u
 
 ## Recommended local runtime
 
-- Context: **2048 tokens** for the Galaxy A12 preset
+- Context: **1536 tokens** for the Galaxy A12 preset
 - Temperature: **0.70**
-- Top-p: **0.80–0.90**
-- Top-k: **20–40**
-- Repeat penalty: **1.10**
-- Max output: **512 tokens**
-- CPU threads: **4**
+- Top-p: **0.95**
+- Top-k: **40**
+- Repeat penalty: **1.08**
+- Output: **104 pieces for ordinary replies; up to 176 for explicitly detailed replies**
+- CPU threads: **4**, with actual throughput displayed in the app
 - Memory mapping: **enabled**
-- Flash attention: **when supported**
 - GPU layers: **0 by default for stability**
 
-The model's underlying Qwen3-1.7B context capacity is larger, but the 2048-token local preset is intentional: it reduces memory pressure and keeps the phone-focused runtime practical.
+The bundled MiniCPM5-1B Q4_K_M checkpoint is approximately 688 MB and was selected as the stronger personalized 1B-class candidate. Its no-think template avoids spending the phone's limited CPU budget on hidden reasoning for ordinary chat. Short replies are capped to reduce unnecessary decoding; longer limits are used only when the request calls for detail. The app streams generated text and reports measured tokens per second. Actual Galaxy A12 speed still requires on-device measurement.
 
 ## Free build
 
 RedAI is built from the repository using GitHub Actions and open-source tooling. No paid API, paid model host, subscription, or proprietary inference service is required to build or run the GGUF locally.
+
+## Android v5.1 runtime
+
+The Android app uses the Apache-2.0 SmolChatAndroidLib V2.1 runtime, which selects an ARM64 native build based on CPU features and supports streamed token output. The bundled GGUF is the fine-tuned RedAI MiniCPM5-1B candidate, not the unpersonalized Qwen3.5-0.8B test model. The app keeps the model bundled and local, stores up to 30 separate conversations with open/delete controls, restores the recent context of the selected chat, and uses a smaller relevant subset of Red's Ways Of Thinking instead of inserting all 38 statements into every related prompt. It supports local text-file reading, PDF text extraction through OCR (first five pages), and image OCR; attachment contents are never sent to web search, and the app does not claim visual scene understanding or camera/screen awareness. Tap-to-talk uses Android's available speech-recognition service and replies can be spoken with Android TTS. The app displays measured generation speed. A successful CI build is not a substitute for testing on the physical Galaxy A12.
 
 ## Optional live web search
 
