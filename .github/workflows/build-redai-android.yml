@@ -104,7 +104,24 @@ jobs:
 
       - name: Build signed ARM64 APK
         working-directory: android-ui
-        run: gradle --no-daemon assembleDebug
+        run: |
+          set -uo pipefail
+          for attempt in 1 2 3; do
+            echo "RedAI Android build attempt $attempt/3"
+            if gradle --no-daemon assembleDebug 2>&1 | tee "/tmp/redai-gradle-attempt-$attempt.log"; then
+              exit 0
+            fi
+            if ! grep -Eqi 'Premature end of Content-Length|Could not download|Could not get resource|Could not resolve all files' "/tmp/redai-gradle-attempt-$attempt.log"; then
+              echo "Gradle failed for a reason other than a transient dependency download; stopping without masking the real error."
+              exit 1
+            fi
+            echo "A remote Maven/JitPack download was interrupted. Clearing only the affected SmolChat artifact cache before retry."
+            rm -rf "$HOME/.gradle/caches/modules-2/files-2.1/com.github.woheller69/SmolChatAndroidLib"
+            rm -rf "$HOME/.gradle/caches/modules-2/metadata-2"
+            if [ "$attempt" -lt 3 ]; then sleep $((attempt * 12)); fi
+          done
+          echo "Dependency download failed after three attempts."
+          exit 1
 
       - name: Verify APK runtime and UI
         run: |
