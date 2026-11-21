@@ -26,6 +26,7 @@ import android.speech.tts.TextToSpeech
 import java.util.Locale
 import java.time.LocalDate
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -66,6 +67,10 @@ data class Message(val role: String, val text: String, val context: String? = nu
 data class ChatSummary(val id: String, val title: String, val updatedAt: Long)
 
 class MainActivity : ComponentActivity() {
+    private val micPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startVoiceInput()
+        else render("Microphone permission was denied. Voice input remains off; typing still works.")
+    }
     private val engine = SmolLM()
     private var modelFile: File? = null
     private var modelReady = false
@@ -206,10 +211,8 @@ class MainActivity : ComponentActivity() {
                 this, android.Manifest.permission.RECORD_AUDIO
             ) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
-            androidx.core.app.ActivityCompat.requestPermissions(
-                this, arrayOf(android.Manifest.permission.RECORD_AUDIO), 9004
-            )
             render("Microphone permission is needed for voice input.")
+            micPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
             return
         }
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -221,20 +224,6 @@ class MainActivity : ComponentActivity() {
         }
         runCatching { startActivityForResult(intent, 9003) }
             .onFailure { render("No compatible speech-recognition service is available. Check that an Android speech service is installed and enabled.") }
-    }
-
-    @Deprecated("Compatibility with Android 12")
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 9004) {
-            if (grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                startVoiceInput()
-            } else {
-                render("Microphone permission was denied. Voice input remains off; typing still works.")
-            }
-        }
     }
 
     @Deprecated("Compatibility with Android 12")
