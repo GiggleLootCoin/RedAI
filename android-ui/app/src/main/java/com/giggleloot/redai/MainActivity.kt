@@ -202,12 +202,39 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startVoiceInput() {
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.RECORD_AUDIO
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            androidx.core.app.ActivityCompat.requestPermissions(
+                this, arrayOf(android.Manifest.permission.RECORD_AUDIO), 9004
+            )
+            render("Microphone permission is needed for voice input.")
+            return
+        }
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Talk to RedAI")
         }
         runCatching { startActivityForResult(intent, 9003) }
-            .onFailure { render("Voice input is unavailable on this phone.") }
+            .onFailure { render("No compatible speech-recognition service is available. Check that an Android speech service is installed and enabled.") }
+    }
+
+    @Deprecated("Compatibility with Android 12")
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 9004) {
+            if (grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                startVoiceInput()
+            } else {
+                render("Microphone permission was denied. Voice input remains off; typing still works.")
+            }
+        }
     }
 
     @Deprecated("Compatibility with Android 12")
