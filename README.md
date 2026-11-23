@@ -29,13 +29,13 @@ RedAI is created and personalized by Red, also known as LittleRedBigSmile. The u
 
 ## Low-memory runtime settings
 
-- Context: **512 tokens** in the v5.2 Galaxy A12-oriented build
+- Context: **512 tokens** in the v5.3 Galaxy A12-oriented build
 - Temperature: **0.70**
 - Top-p: **0.95**
 - Top-k: **40**
 - Repeat penalty: **1.08**
 - Output: **104 pieces for ordinary replies; up to 176 for explicitly detailed replies**
-- CPU threads: **2** in the v5.2 low-memory build
+- CPU threads: **2** in the v5.3 low-memory build
 - Memory mapping: **enabled**
 - GPU layers: **0 by default for stability**
 
@@ -45,7 +45,7 @@ The bundled MiniCPM5-1B Q4_K_M checkpoint is approximately 688 MB and was select
 
 RedAI is built from the repository using GitHub Actions and open-source tooling. No paid API, paid model host, subscription, or proprietary inference service is required to build or run the GGUF locally.
 
-## Android v5.2 runtime
+## Android v5.3 runtime
 
 The Android app uses the Apache-2.0 SmolChatAndroidLib V2.1 runtime, which selects an ARM64 native build based on CPU features and supports streamed token output. The bundled GGUF is the fine-tuned RedAI MiniCPM5-1B candidate, not the unpersonalized Qwen3.5-0.8B test model. The app keeps the model bundled and local, stores up to 30 separate conversations with open/delete controls, restores the recent context of the selected chat, and uses a smaller relevant subset of Red's Ways Of Thinking instead of inserting all 38 statements into every related prompt. It supports local text-file reading, PDF text extraction through OCR (first five pages), and image OCR; attachment contents are never sent to web search, and the app does not claim visual scene understanding or camera/screen awareness. Tap-to-talk uses Android's available speech-recognition service and replies can be spoken with Android TTS. The app displays measured generation speed. A successful CI build is not a substitute for testing on the physical Galaxy A12.
 
