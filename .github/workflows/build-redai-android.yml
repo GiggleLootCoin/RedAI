@@ -87,6 +87,7 @@ jobs:
           from pathlib import Path
           cmake = Path("android-ui/smollm/src/main/cpp/CMakeLists.txt")
           source = cmake.read_text(encoding="utf-8")
+          print("ARM64 CMake lines:", [repr(line) for line in source.splitlines() if "smollm_v8" in line or "arm64-v8a" in line])
           baseline = 'build_library_arm64("smollm_v8" "-march=armv8-a")'
           index = source.find(baseline)
           end = source.find("endif()", index)
