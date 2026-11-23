@@ -39,6 +39,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -1466,7 +1467,7 @@ fun RedAIApp(
                     colors = CardDefaults.cardColors(containerColor = panel),
                     border = BorderStroke(1.dp, line)
                 ) {
-                    Column(Modifier.padding(16.dp)) {
+                    Column(Modifier.padding(16.dp).heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(
@@ -1668,13 +1669,18 @@ fun RedAIApp(
                                 bottomStart = if (isUser) 20.dp else 6.dp,
                                 bottomEnd = if (isUser) 6.dp else 20.dp
                             ),
-                            color = if (isUser) red.copy(alpha = 0.16f) else panel,
+                            color = if (isUser) Color(0xFF2B0B15) else Color(0xFF101116),
                             border = BorderStroke(
                                 1.dp,
-                                if (isUser) red.copy(alpha = 0.45f) else line
-                            )
+                                if (isUser) Color(0x99FF3B58) else Color(0xFF292A33)
+                            ),
+                            shadowElevation = if (isUser) 8.dp else 4.dp
                         ) {
-                            Column(Modifier.padding(horizontal = 15.dp, vertical = 12.dp)) {
+                            Column(
+                                Modifier
+                                    .background(Brush.linearGradient(if (isUser) listOf(Color(0xFF3A0B1A), Color(0xFF1B0A12)) else listOf(Color(0xFF1A1B22), Color(0xFF0C0D12))))
+                                    .padding(horizontal = 15.dp, vertical = 12.dp)
+                            ) {
                                 Text(
                                     if (isUser) "YOU" else "REDAI",
                                     color = if (isUser) redBright else muted,
@@ -1703,7 +1709,7 @@ fun RedAIApp(
                             }
                             ClickableText(
                                 text = linkedText,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = white),
+                                style = MaterialTheme.typography.bodyMedium.copy(color = white, fontSize = 15.sp, lineHeight = 22.sp),
                                 onClick = { offset ->
                                     linkedText.getStringAnnotations("URL", offset, offset)
                                         .firstOrNull()?.let { annotation ->
@@ -1774,7 +1780,7 @@ fun RedAIApp(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(panel)
+                    .background(Brush.horizontalGradient(listOf(Color(0xFF18070D), Color(0xFF0C0D12), Color(0xFF18070D))))
                     .padding(10.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -1822,7 +1828,8 @@ fun RedAIApp(
                         containerColor = red,
                         disabledContainerColor = panelRaised,
                         contentColor = Color.White
-                    )
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp, pressedElevation = 1.dp)
                 ) {
                     Text(if (busy) "…" else "SEND  ›", fontWeight = FontWeight.Black, letterSpacing = 0.5.sp)
                 }
