@@ -166,7 +166,9 @@ jobs:
           grep -Fq 'tts_voice_name' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'image-labeling' android-ui/app/build.gradle.kts
           ! grep -Fq 'android.permission.CAMERA' android-ui/app/src/main/AndroidManifest.xml
-          grep -Fq 'contextSize = 512L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'contextSize = 256L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+grep -Fq 'minimumFreeRamMb = 1408L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+grep -Fq 'availableRamMb < minimumFreeRamMb' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'numThreads = 2' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'StatFs(dir.absolutePath).availableBytes' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'Not enough free storage to install RedAI' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
