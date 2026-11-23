@@ -692,7 +692,7 @@ class MainActivity : ComponentActivity() {
             // The bundled 1B GGUF and native runtime need a substantially larger
             // safety margin than the old 768 MB gate. Native OOM/SIGSEGV can
             // terminate the process before Kotlin can catch an exception.
-            val minimumFreeRamMb = 1408L
+            val minimumFreeRamMb = 1280L
             val availableRamMb = memoryInfo.availMem / (1024L * 1024L)
             if (memoryInfo.lowMemory || availableRamMb < minimumFreeRamMb) {
                 throw IllegalStateException(
