@@ -10,6 +10,10 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.google.mlkit.vision.label.ImageLabeling
+import com.google.mlkit.vision.label.ImageLabeler
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
+import com.google.mlkit.vision.label.ImageLabel
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -254,7 +258,7 @@ class MainActivity : ComponentActivity() {
                     val modelPrompt = buildString {
                         append("Analyse the attached file named ")
                         append(name)
-                        append(". The following text was extracted locally. For an image this is OCR only, not visual scene understanding. Be clear about missing or truncated content.\n\n")
+                        append(". The following content was extracted locally. For images it includes basic on-device object labels and OCR, not full visual scene understanding. Object labels are predictions, not certainties. Be clear about missing or truncated content.\n\n")
                         append(extracted)
                     }
                     generate(modelPrompt, allowSearch = false) { answer, finished, speed ->
@@ -317,12 +321,41 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun extractImageText(uri: Uri): String {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        val labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
         return try {
             val image = InputImage.fromFilePath(this, uri)
-            recognizeText(image, recognizer)
+            val ocr = recognizeText(image, recognizer)
+            val labels = runCatching { recognizeImageLabels(image, labeler) }
+                .getOrElse { "Object labels unavailable: " + (it.message ?: "on-device image labelling failed") }
+            buildString {
+                append("ON-DEVICE IMAGE LABELS\n")
+                append(labels.ifBlank { "No confident object labels were returned." })
+                append("\n\nTEXT FOUND IN IMAGE (OCR)\n")
+                append(ocr.ifBlank { "No readable text found." })
+            }
         } finally {
             recognizer.close()
+            labeler.close()
         }
+    }
+
+    private suspend fun recognizeImageLabels(image: InputImage, labeler: ImageLabeler): String {
+        val labels = suspendCancellableCoroutine<List<ImageLabel>> { continuation ->
+            labeler.process(image)
+                .addOnSuccessListener { result ->
+                    if (continuation.isActive) continuation.resume(result)
+                }
+                .addOnFailureListener { error ->
+                    if (continuation.isActive) continuation.resumeWithException(error)
+                }
+        }
+        return labels
+            .filter { it.confidence >= 0.45f }
+            .sortedByDescending { it.confidence }
+            .take(8)
+            .joinToString("\n") { item ->
+                "${item.text} (${(item.confidence * 100).toInt()}% confidence)"
+            }
     }
 
     private suspend fun extractPdfText(uri: Uri): String = withContext(Dispatchers.IO) {
