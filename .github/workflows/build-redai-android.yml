@@ -87,12 +87,12 @@ jobs:
           from pathlib import Path
           cmake = Path("android-ui/smollm/src/main/cpp/CMakeLists.txt")
           source = cmake.read_text(encoding="utf-8")
-          start = source.find('if (${ANDROID_ABI} STREQUAL "arm64-v8a")')
-          end = source.find("\nendif()", start)
-          baseline = '    build_library_arm64("smollm_v8" "-march=armv8-a")'
-          if start < 0 or end < 0 or baseline not in source[start:end]:
+          baseline = 'build_library_arm64("smollm_v8" "-march=armv8-a")'
+          index = source.find(baseline)
+          end = source.find("endif()", index)
+          if index < 0 or end < 0:
               raise SystemExit("Could not locate the native ARM64 baseline target.")
-          source = source[:start] + 'if (${ANDROID_ABI} STREQUAL "arm64-v8a")\n' + baseline + source[end:]
+          source = source[:index + len(baseline)] + "\n" + source[end:]
           cmake.write_text(source, encoding="utf-8")
           kt = Path("android-ui/smollm/src/main/java/io/shubham0204/smollm/SmolLM.kt")
           source = kt.read_text(encoding="utf-8")
