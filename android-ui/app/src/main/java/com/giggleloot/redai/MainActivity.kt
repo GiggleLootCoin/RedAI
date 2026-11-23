@@ -680,8 +680,8 @@ class MainActivity : ComponentActivity() {
                 engine.load(
                     modelPath = file.absolutePath,
                     params = SmolLM.InferenceParams(
-                        contextSize = 1536L,
-                        numThreads = 4,
+                        contextSize = 512L,
+                        numThreads = 2,
                         temperature = 0.70f,
                         topP = 0.95f,
                         topK = 40,
@@ -698,10 +698,14 @@ class MainActivity : ComponentActivity() {
             modelFile = file
             modelReady = true
             render("LOCAL ENGINE READY • Your bundled model is running on this phone.")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             runCatching { withContext(Dispatchers.IO) { engine.close() } }
             modelReady = false
-            render("RedAI could not prepare its local engine: " + (e.message ?: "unknown runtime error"))
+            val reason = when (e) {
+                is OutOfMemoryError -> "This phone ran out of available memory while loading the model. Close other apps and retry; the reduced-memory profile is now active."
+                else -> e.message ?: e.javaClass.simpleName
+            }
+            render("RedAI could not prepare its local engine: " + reason)
         } finally {
             isLoadingModel = false
         }
