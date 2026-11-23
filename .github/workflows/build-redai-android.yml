@@ -102,7 +102,7 @@ jobs:
           print("Live no-key Wikipedia search returned", len(result["results"]), "source links.")
           PY
 
-      - name: Build signed ARM64 APK
+      - name: Build ARM64 debug-signed APK
         working-directory: android-ui
         run: |
           set -uo pipefail
