@@ -13,10 +13,6 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import com.google.mlkit.vision.label.ImageLabeling
-import com.google.mlkit.vision.label.ImageLabeler
-import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
-import com.google.mlkit.vision.label.ImageLabel
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -299,7 +295,7 @@ class MainActivity : ComponentActivity() {
                 if (extracted.isBlank()) throw IllegalArgumentException("No readable labels or text were found in the photo.")
                 val displayPrompt = "Analyse the photo I just took"
                 val modelPrompt = buildString {
-                    append("Analyse this camera photo using the on-device object labels and OCR below. These are basic predictions, not full visual scene understanding. Do not invent details that are not supported by the labels or text.\n\n")
+                    append("Analyse this camera photo using the on-device OCR text below. This app currently extracts readable text only; it does not understand the full visual scene. Do not invent visual details that were not supplied.\n\n")
                     append(extracted)
                 }
                 generate(modelPrompt, allowSearch = false) { answer, finished, speed ->
@@ -351,15 +347,19 @@ class MainActivity : ComponentActivity() {
             micPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
             return
         }
+        if (!android.speech.SpeechRecognizer.isRecognitionAvailable(this)) {
+            render("No speech-recognition service is installed or enabled. Install or enable an Android speech service, then try the microphone again. You can still type.")
+            return
+        }
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Talk to RedAI")
         }
         runCatching { startActivityForResult(intent, 9003) }
-            .onFailure { render("No compatible speech-recognition service is available. Check that an Android speech service is installed and enabled.") }
+            .onFailure { render("Android could not start speech recognition: " + (it.message ?: "speech service unavailable") + ". Typing remains available.") }
     }
 
     @Deprecated("Compatibility with Android 12")
@@ -403,7 +403,7 @@ class MainActivity : ComponentActivity() {
                     val modelPrompt = buildString {
                         append("Analyse the attached file named ")
                         append(name)
-                        append(". The following content was extracted locally. For images it includes basic on-device object labels and OCR, not full visual scene understanding. Object labels are predictions, not certainties. Be clear about missing or truncated content.\n\n")
+                        append(". The following content was extracted locally. For images, only readable text (OCR) is extracted; the app does not currently interpret the full visual scene. Be clear about missing or truncated content.\n\n")
                         append(extracted)
                     }
                     generate(modelPrompt, allowSearch = false) { answer, finished, speed ->
@@ -466,41 +466,16 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun extractImageText(uri: Uri): String {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        val labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
         return try {
             val image = InputImage.fromFilePath(this, uri)
             val ocr = recognizeText(image, recognizer)
-            val labels = runCatching { recognizeImageLabels(image, labeler) }
-                .getOrElse { "Object labels unavailable: " + (it.message ?: "on-device image labelling failed") }
             buildString {
-                append("ON-DEVICE IMAGE LABELS\n")
-                append(labels.ifBlank { "No confident object labels were returned." })
-                append("\n\nTEXT FOUND IN IMAGE (OCR)\n")
-                append(ocr.ifBlank { "No readable text found." })
+                append("ON-DEVICE TEXT RECOGNITION (OCR)\n")
+                append(ocr.ifBlank { "No readable text found in this image." })
             }
         } finally {
             recognizer.close()
-            labeler.close()
         }
-    }
-
-    private suspend fun recognizeImageLabels(image: InputImage, labeler: ImageLabeler): String {
-        val labels = suspendCancellableCoroutine<List<ImageLabel>> { continuation ->
-            labeler.process(image)
-                .addOnSuccessListener { result ->
-                    if (continuation.isActive) continuation.resume(result)
-                }
-                .addOnFailureListener { error ->
-                    if (continuation.isActive) continuation.resumeWithException(error)
-                }
-        }
-        return labels
-            .filter { it.confidence >= 0.45f }
-            .sortedByDescending { it.confidence }
-            .take(8)
-            .joinToString("\n") { item ->
-                "${item.text} (${(item.confidence * 100).toInt()}% confidence)"
-            }
     }
 
     private suspend fun extractPdfText(uri: Uri): String = withContext(Dispatchers.IO) {
