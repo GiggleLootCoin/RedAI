@@ -229,19 +229,12 @@ class MainActivity : ComponentActivity() {
             putExtra(MediaStore.EXTRA_OUTPUT, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
-        if (intent.resolveActivity(packageManager) == null) {
-            pendingCameraUri = null
-            pendingCameraFile = null
-            photo.delete()
-            render("No compatible camera app is available on this device.")
-            return
-        }
         runCatching { startActivityForResult(intent, 9004) }
             .onFailure {
                 pendingCameraUri = null
                 pendingCameraFile = null
                 photo.delete()
-                render("Could not open the camera: " + (it.message ?: "unknown error"))
+                render("Could not open the camera: " + (it.message ?: "no camera app is available"))
             }
     }
 
@@ -252,7 +245,7 @@ class MainActivity : ComponentActivity() {
                 if (extracted.isBlank()) throw IllegalArgumentException("No readable labels or text were found in the photo.")
                 val displayPrompt = "Analyse the photo I just took"
                 val modelPrompt = buildString {
-                    append("Analyse this camera photo using the on-device object labels and OCR below. These are basic predictions, not full visual scene understanding. Do not invent details that are not supported by the labels or text.\\n\\n")
+                    append("Analyse this camera photo using the on-device object labels and OCR below. These are basic predictions, not full visual scene understanding. Do not invent details that are not supported by the labels or text.\n\n")
                     append(extracted)
                 }
                 generate(modelPrompt, allowSearch = false) { answer, finished, speed ->
