@@ -337,7 +337,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: RedAI Android v5.5.1 — LittleRedBigSmile Edition
           body: |
-            RedAI Android 5.5.1 with the fine-tuned MiniCPM5-1B Q4_K_M RedAI GGUF, protected deferred native engine initialization with a 1,408 MB RAM preflight and 512-token context, resilient Compose lifecycle, crash diagnostics, premium black/red redesign with conservative ARM64 runtime, ARM64 streaming runtime, persistent chats and optional live search. This is a debug-signed ARM64 test build; physical Galaxy A12 validation is still required.
+            RedAI Android 5.5.1 with the fine-tuned MiniCPM5-1B Q4_K_M RedAI GGUF, protected deferred native engine initialization with a 1,280 MB RAM preflight and 512-token context, resilient Compose lifecycle, crash diagnostics, premium black/red redesign with conservative ARM64 runtime, ARM64 streaming runtime, persistent chats and optional live search. This is a debug-signed ARM64 test build; physical Galaxy A12 validation is still required.
 
             Foundation model: MiniCPM5-1B (Apache-2.0). Red's fine-tuned RedAI checkpoint and the RedAI product/persona integration are built and personalized by LittleRedBigSmile.
           files: |
