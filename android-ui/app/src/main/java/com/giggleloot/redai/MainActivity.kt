@@ -209,7 +209,7 @@ class MainActivity : ComponentActivity() {
                             connectTimeout = 20000
                             readTimeout = 30000
                             setRequestProperty("apikey", "0000000000")
-                            setRequestProperty("Client-Agent", "RedAI:Android:5.2:LittleRedBigSmile")
+                            setRequestProperty("Client-Agent", "RedAI:Android:5.4:LittleRedBigSmile")
                             setRequestProperty("Accept", "application/json")
                             if (body != null) {
                                 doOutput = true
