@@ -108,6 +108,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installCrashRecorder()
+        val previousLoadStage = getSharedPreferences("redai_diagnostics", Context.MODE_PRIVATE)
+            .getString("load_stage", "none") ?: "none"
         webEnabled = prefs.getBoolean("web_enabled", true)
         webProvider = prefs.getString("web_provider", "duckduckgo") ?: "duckduckgo"
         selectedTtsVoiceName = prefs.getString("tts_voice_name", "system") ?: "system"
@@ -128,7 +130,23 @@ class MainActivity : ComponentActivity() {
         }
         ensureSessionStore()
         refreshChatSummaries()
-        render("RedAI is ready. Load the private local brain when you are ready; startup stays lightweight.")
+        render(
+            if (previousLoadStage.startsWith("loading:")) {
+                "Previous model load stopped at: ${previousLoadStage.removePrefix("loading:")}. The app restarted; open Settings and copy diagnostics."
+            } else {
+                "RedAI is ready. Load the private local brain when you are ready; startup stays lightweight."
+            }
+        )
+    }
+
+    // Synchronous checkpoints survive a native crash or OS process kill.
+    // The next app launch can report the last stage reached by the loader.
+    private fun setLoadStage(stage: String) {
+        getSharedPreferences("redai_diagnostics", Context.MODE_PRIVATE)
+            .edit()
+            .putString("load_stage", stage)
+            .putLong("load_stage_at", System.currentTimeMillis())
+            .commit()
     }
 
     private fun installCrashRecorder() {
@@ -678,14 +696,17 @@ class MainActivity : ComponentActivity() {
         }
         if (isLoadingModel || (modelReady && !reset)) return
         isLoadingModel = true
+        setLoadStage("loading:begin")
         try {
             if (reset && modelReady) {
+                setLoadStage("loading:unloading_previous_engine")
                 engine?.stop()
                 withContext(Dispatchers.IO) { engine?.close() }
                 engine = null
                 modelReady = false
             }
             render(if (reset) "Starting a fresh private conversation…" else "Checking phone memory and loading the local brain…")
+            setLoadStage("loading:checking_memory")
             val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             val memoryInfo = ActivityManager.MemoryInfo()
             manager.getMemoryInfo(memoryInfo)
@@ -699,8 +720,11 @@ class MainActivity : ComponentActivity() {
                     "RedAI has paused model loading to protect your phone. Available RAM: ${availableRamMb} MB; required safety margin: ${minimumFreeRamMb} MB. Close background apps and retry after memory is available."
                 )
             }
+            setLoadStage("loading:copying_bundled_model")
             val file = copyBundledModel()
+            setLoadStage("loading:creating_native_engine")
             val activeEngine = engine ?: SmolLM().also { engine = it }
+            setLoadStage("loading:entering_native_model_load")
             withContext(Dispatchers.IO) {
                 activeEngine.load(
                     modelPath = file.absolutePath,
@@ -717,13 +741,19 @@ class MainActivity : ComponentActivity() {
                         chatTemplate = miniCpm5NoThinkTemplate()
                     )
                 )
+                setLoadStage("loading:native_model_loaded_adding_prompt")
                 activeEngine.addSystemPrompt(baseSystemPrompt())
-                if (restoreHistory) restoreRecentConversation(activeEngine)
+                if (restoreHistory) {
+                    setLoadStage("loading:restoring_chat_history")
+                    restoreRecentConversation(activeEngine)
+                }
             }
             modelFile = file
             modelReady = true
+            setLoadStage("ready")
             render("LOCAL ENGINE READY • Your bundled model is running on this phone.")
         } catch (e: Throwable) {
+            setLoadStage("caught:${e.javaClass.simpleName}:${(e.message ?: "no message").take(180)}")
             val failedEngine = engine
             runCatching { withContext(Dispatchers.IO) { failedEngine?.stop(); failedEngine?.close() } }
             engine = null
@@ -1478,6 +1508,8 @@ fun RedAIApp(
                                     appendLine("Available RAM: ${memory.availMem / (1024L * 1024L)} MB / ${memory.totalMem / (1024L * 1024L)} MB")
                                     appendLine("Free app storage: ${android.os.StatFs(context.filesDir.absolutePath).availableBytes / (1024L * 1024L)} MB")
                                     appendLine("Model loaded: ${isModelLoaded}")
+                                    appendLine("Last model-load stage: ${crashPrefs.getString("load_stage", "not recorded")}")
+                                    appendLine("Last model-load stage time: ${crashPrefs.getLong("load_stage_at", 0L)}")
                                     appendLine("Last saved Java crash: ${crashPrefs.getLong("last_crash_at", 0L)}")
                                     appendLine(lastCrash.take(4000))
                                     appendLine("Recent Android process exits:")
