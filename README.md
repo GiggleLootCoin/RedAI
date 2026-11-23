@@ -58,3 +58,7 @@ See [WEB_SEARCH.md](WEB_SEARCH.md) for provider costs, privacy behavior, Android
 ## Release
 
 The redai-latest GitHub Release contains the verified RedAI.gguf package and SHA-256 checksum. The release is rebuilt whenever the main training/build pipeline is deliberately updated. Web search is provided by the app/bridge, not baked into or required by the GGUF.
+
+## Android speech voices
+
+Settings can cycle through English voices already installed in the phone's Android text-to-speech service, preferring offline voices. RedAI does not bundle proprietary voice packs; the available voices depend on the installed Android TTS engine.
