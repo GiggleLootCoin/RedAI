@@ -14,7 +14,8 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 21
-        versionName = "5.5.1"
+        versionName = "5.6.0"
+        ndk { abiFilters += listOf("arm64-v8a") }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -35,5 +36,5 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jsoup:jsoup:1.18.3")
     implementation("com.google.mlkit:text-recognition:16.0.1")
-    implementation("com.github.woheller69:SmolChatAndroidLib:V2.1")
+    implementation(project(":smollm"))
 }
