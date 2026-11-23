@@ -1,27 +1,25 @@
 {
   "name": "RedAI",
   "created_by": "Red",
-  "creator_display_name": "Little Red Big Smile",
-  "foundation": "Qwen3-1.7B",
+  "creator_display_name": "LittleRedBigSmile",
+  "foundation": "MiniCPM5-1B",
   "format": "GGUF",
   "quantization": "Q4_K_M",
   "mode": "offline_first",
   "performance": {
     "default_temperature": 0.7,
-    "temperature_range": [
-      0.55,
-      0.85
-    ],
-    "top_p": 0.8,
-    "top_k": 20,
-    "repeat_penalty": 1.1,
-    "max_output_tokens": 512,
-    "context": 2048,
-    "cpu_threads": 4,
+    "top_p": 0.95,
+    "top_k": 40,
+    "repeat_penalty": 1.08,
+    "max_output_pieces": {
+      "quick": 104,
+      "long": 176
+    },
+    "context": 512,
+    "cpu_threads": 2,
     "use_mmap": true,
-    "flash_attention_when_supported": true,
-    "gpu_layers": 0,
-    "presence_penalty": 1.5
+    "use_mlock": false,
+    "gpu_layers": 0
   },
   "web_search": {
     "enabled": true,
@@ -31,8 +29,44 @@
   "memory": {
     "enabled": true,
     "mode": "external_local_store",
-    "model_weights_do_not_store_conversation_memory": true
+    "model_weights_do_not_store_conversation_memory": true,
+    "max_saved_conversations": 30,
+    "storage": "SharedPreferences local session store"
   },
   "identity": "RedAI is a personalized local AI created by Red and trained on Red's Ways Of Thinking.",
-  "privacy": "Local inference remains local unless the runtime explicitly invokes an external web or other tool."
+  "privacy": "Local inference remains local unless the runtime explicitly invokes an external web or other tool.",
+  "inference_engine": {
+    "name": "SmolChatAndroidLib",
+    "version": "V2.1",
+    "license": "Apache-2.0",
+    "features": [
+      "llama.cpp ARM64 runtime CPU feature detection",
+      "token streaming",
+      "on-device chat history",
+      "up to 30 persistent chat sessions with switching and deletion",
+      "local OCR for PDF and image text"
+    ]
+  },
+  "foundation_source": "openbmb/MiniCPM5-1B",
+  "personalized_checkpoint": "RedAI MiniCPM5-1B fine-tuned candidate",
+  "model_sha256": "eca3959621ebc7c4dc49f8f7bcdb015642e6c37d7f8a26dcd4d95d9072d40052",
+  "model_size_bytes": 688065856,
+  "app_version": "5.6.0",
+  "attachments": {
+    "text_files": true,
+    "pdf_ocr_pages": 5,
+    "image_ocr": true,
+    "visual_scene_understanding": false
+  },
+  "voice": {
+    "input": "Android system speech recognition tap-to-talk; no always-listening or independent offline recognizer",
+    "output": "Android TextToSpeech using installed English voices; custom cloned Red voice is not integrated"
+  },
+  "image_generation": {
+    "available": true,
+    "provider": "Stable Horde / AI Horde volunteer workers",
+    "on_device": false,
+    "requires_network": true,
+    "prompt_sent_to_external_provider": true
+  }
 }

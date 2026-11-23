@@ -1,0 +1,11 @@
+REDAI MODEL NOTICE
+
+Product: RedAI — created and personalized by LittleRedBigSmile (Red).
+Fine-tuned RedAI candidate: MiniCPM5-1B, merged and quantized to GGUF Q4_K_M.
+Model file in this APK: RedAI.gguf
+Candidate source: https://github.com/GiggleLootCoin/RedAI/releases/tag/redai-minicpm5-candidate
+Foundation model source: https://huggingface.co/openbmb/MiniCPM5-1B
+Foundation model license: Apache License 2.0.
+SHA-256: eca3959621ebc7c4dc49f8f7bcdb015642e6c37d7f8a26dcd4d95d9072d40052
+
+LittleRedBigSmile created and personalized the RedAI project, its assistant identity, training data and fine-tuning pipeline. The underlying MiniCPM5-1B foundation weights are third-party Apache-2.0 weights; they are not claimed as Red's original foundation model. Red's Ways Of Thinking statements are included separately and framed as Red's perspectives, not independently verified facts.

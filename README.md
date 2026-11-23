@@ -1,56 +1,63 @@
 # RedAI
 
-Standalone local AI model for RedUI.
+RedAI is an Android AI app created and personalized by **Red (LittleRedBigSmile)**. It combines a bundled local language model, an Android interface, private on-device chat history, Red's Ways Of Thinking, and optional online tools.
 
-## Current build target
+## Current development build: Android 5.6.0
 
-- Foundation: **Qwen3-1.7B**
-- Personalization: **Red's Ways Of Thinking**
-- Fine-tuning: **LoRA with assistant-completion-only loss**
-- Quantization: **GGUF Q4_K_M**
-- Runtime target: **Android / Galaxy A12-class hardware**
-- Design goal: **free, offline-first local inference**, with optional external tools only when explicitly invoked
+- Foundation: MiniCPM5-1B Q4_K_M GGUF, bundled by the GitHub Actions build.
+- Personalization: RedAI fine-tuned candidate plus Red's Ways Of Thinking framework.
+- Runtime: Pinned SmolChatAndroidLib V2.1 / llama.cpp using the conservative ARMv8-A baseline, ARM64 CPU runtime, streamed output.
+- Runtime profile: 512-token context, 2 CPU threads, temperature 0.70, top-p 0.95, top-k 40, repeat penalty 1.08.
+- Model load is user-initiated and now requires at least 1,280 MB of available system RAM before native loading; inference context is capped at 512 tokens to reduce memory pressure.
+- Up to 30 local conversation sessions, with switching and deletion.
+- Optional DuckDuckGo/Wikipedia search and optional Tavily search.
+- Local text-file reading, PDF text extraction (up to five pages), and image OCR.
+- Android system speech recognition (tap-to-talk) and installed Android TTS voices.
+- Optional image generation through external AI Horde volunteer workers.
 
-## What was improved
+## What works and what does not
 
-The training pipeline is deliberately conservative because the personalization corpus is small. RedAI now:
+| Capability | Current state |
+|---|---|
+| Bundled local GGUF and ARM64 inference | Included; CI verifies model checksum and runtime smoke test |
+| Local chat and saved sessions | Implemented |
+| Red's Ways Of Thinking context | Included in runtime prompts |
+| Optional web search | Implemented; requires internet |
+| Text/PDF/image OCR | Implemented on-device |
+| Camera capture | Captures a photo; analysis is OCR-only |
+| Microphone | Tap-to-talk through Android speech recognition |
+| Speech output | Android TTS voices already installed on the phone |
+| Custom cloned Red voice | Not integrated |
+| Continuous hands-free conversation | Not implemented |
+| Full visual scene understanding | Not implemented; OCR only |
+| Local/offline image generation | Not implemented; AI Horde sends the prompt to external volunteer workers |
+| Galaxy A12 performance validation | Requires testing on the physical handset |
 
-- trains only on assistant completion tokens instead of wasting capacity learning to reproduce system/user prompts;
-- uses the Qwen chat template consistently for training and llama.cpp verification;
-- keeps the foundation at Qwen3-1.7B, which is a stronger practical fit for the Galaxy A12 than moving to a much larger model;
-- preserves Red's Ways Of Thinking as personalized material while teaching the model to distinguish framework/perspective from independently verified fact;
-- includes identity, correction, honesty, tool-use, privacy, planning, math, ambiguity, and failure-reporting anchors;
-- verifies non-empty output, identity, creator, normal chat, math, capabilities, app/project naming, current-information honesty, and hidden response-planning leakage before packaging.
+Do not interpret a successful GitHub Actions build as proof of physical-device stability, speed, microphone compatibility, thermal performance, or low-memory reliability. Those require a real Android 12 handset test.
 
-## Identity
+## Privacy and network behavior
 
-RedAI is created and personalized by Red, also known as LittleRedBigSmile. The user-facing identity is RedAI; the human creator is Red. The model does not claim ownership of the underlying foundation weights.
+- Normal local model inference and saved conversations remain on the device.
+- Web lookup is optional and only used for requests that need current information or explicitly ask for research. The latest question is sent to the selected search provider.
+- Image generation is a separate online feature. Its prompt is sent to AI Horde; it is not private on-device generation.
+- Microphone input uses the Android speech-recognition service. Offline recognition depends on the installed service and its language packs.
+- Speech output uses the Android TTS engine and its installed voices. No custom Red voice pack is bundled.
 
-## Recommended local runtime
+## Build and verification
 
-- Context: **2048 tokens** for the Galaxy A12 preset
-- Temperature: **0.70**
-- Top-p: **0.80–0.90**
-- Top-k: **20–40**
-- Repeat penalty: **1.10**
-- Max output: **512 tokens**
-- CPU threads: **4**
-- Memory mapping: **enabled**
-- Flash attention: **when supported**
-- GPU layers: **0 by default for stability**
+GitHub Actions downloads the exact GGUF candidate, verifies its SHA-256 and GGUF header, runs a llama.cpp smoke test, builds the ARM64 Android APK, checks the APK contents and source-level regression conditions, and verifies the resulting APK checksum.
 
-The model's underlying Qwen3-1.7B context capacity is larger, but the 2048-token local preset is intentional: it reduces memory pressure and keeps the phone-focused runtime practical.
+The current workflow uses Gradle's **debug build variant**. The APK is debug-signed for installation/testing; this is not a production release-signing configuration. The v5.6.0 artifact is available from the Actions run that produced it.
 
-## Free build
+## Creator and foundation-model attribution
 
-RedAI is built from the repository using GitHub Actions and open-source tooling. No paid API, paid model host, subscription, or proprietary inference service is required to build or run the GGUF locally.
+RedAI's product identity, personalization, application code and Red's Ways Of Thinking integration are created by Red aka LittleRedBigSmile. The underlying MiniCPM5 foundation model is third-party software/model content and is not claimed as authored by Red.
 
-## Optional live web search
+## Next release gates
 
-The GGUF remains fully local and independent of web access. The RedAI Android app includes an optional search integration with no-key DuckDuckGo and Wikipedia providers, plus an optional Tavily provider (current free tier: 1,000 credits/month, no credit card). Search runs only for explicit research/verification or current-information requests. Only the newest user question is sent to the provider; ordinary local chat remains local.
+1. Complete feature implementations that are currently listed as unavailable.
+2. Add deterministic tests for each new capability and preserve model/chat regression coverage.
+3. Test cold start, offline chat, long sessions, memory pressure, audio input/output, attachments, and recovery on the target Galaxy A12.
+4. Configure and validate a production signing/update path before publishing a production release.
 
-See [WEB_SEARCH.md](WEB_SEARCH.md) for provider costs, privacy behavior, Android setup, the standalone bridge for compatible tool-calling frontends, and the ChatterUI limitation. The independent bridge is in [bridge/](bridge/).
-
-## Release
-
-The redai-latest GitHub Release contains the verified RedAI.gguf package and SHA-256 checksum. The release is rebuilt whenever the main training/build pipeline is deliberately updated. Web search is provided by the app/bridge, not baked into or required by the GGUF.
+See [WEB_SEARCH.md](WEB_SEARCH.md) for search-provider behavior and [RED_AI_COMPLETE_SPEC.md](RED_AI_COMPLETE_SPEC.md) for the product acceptance requirements.
