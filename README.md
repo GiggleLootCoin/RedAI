@@ -2,7 +2,7 @@
 
 RedAI is an Android AI app created and personalized by **Red (LittleRedBigSmile)**. It combines a bundled local language model, an Android interface, private on-device chat history, Red's Ways Of Thinking, and optional online tools.
 
-## Current development build: Android 5.4
+## Current development build: Android 5.5
 
 - Foundation: MiniCPM5-1B Q4_K_M GGUF, bundled by the GitHub Actions build.
 - Personalization: RedAI fine-tuned candidate plus Red's Ways Of Thinking framework.
@@ -47,7 +47,7 @@ Do not interpret a successful GitHub Actions build as proof of physical-device s
 
 GitHub Actions downloads the exact GGUF candidate, verifies its SHA-256 and GGUF header, runs a llama.cpp smoke test, builds the ARM64 Android APK, checks the APK contents and source-level regression conditions, and verifies the resulting APK checksum.
 
-The current workflow uses Gradle's **debug build variant**. The APK is debug-signed for installation/testing; this is not a production release-signing configuration. The v5.4 artifact is available from the Actions run that produced it.
+The current workflow uses Gradle's **debug build variant**. The APK is debug-signed for installation/testing; this is not a production release-signing configuration. The v5.5 artifact is available from the Actions run that produced it.
 
 ## Creator and foundation-model attribution
 
