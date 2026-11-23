@@ -1013,7 +1013,7 @@ fun RedAIApp(
     var showChats by remember { mutableStateOf(false) }
     var pendingDeleteId by remember { mutableStateOf<String?>(null) }
     var apiKeyInput by remember { mutableStateOf("") }
-    var voiceLabel by remember { mutableStateOf(selectedVoiceLabel) }
+    var voiceLabel by remember(selectedVoiceLabel) { mutableStateOf(selectedVoiceLabel) }
     var personaName by remember { mutableStateOf(context.getSharedPreferences("redai", Context.MODE_PRIVATE).getString("persona_name", "RedAI") ?: "RedAI") }
     var personaInstructions by remember { mutableStateOf(context.getSharedPreferences("redai", Context.MODE_PRIVATE).getString("persona_instructions", "") ?: "") }
     var showImageMaker by remember { mutableStateOf(false) }
