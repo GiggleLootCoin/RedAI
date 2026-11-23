@@ -981,10 +981,16 @@ class MainActivity : ComponentActivity() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: OutOfMemoryError) {
-                activeEngine.stop()
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        activeEngine.stop()
+                        activeEngine.close()
+                    }
+                }
+                if (engine === activeEngine) engine = null
                 modelReady = false
-                render("Android ran out of memory during generation. Close background apps before loading the model again.")
-                callback("RedAI ran out of available memory while answering. Your saved chat remains on this phone.", true, 0f)
+                render("Android ran out of memory during generation. The native model has been unloaded to release memory. Close background apps before trying again.")
+                callback("RedAI ran out of available memory while answering. The native model was safely unloaded; your saved chat remains on this phone.", true, 0f)
             } catch (e: Exception) {
                 callback("RedAI couldn't answer: " + (e.message ?: "unknown runtime error"), true, 0f)
             } finally {
