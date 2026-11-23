@@ -13,8 +13,8 @@ android {
         applicationId = "com.giggleloot.redai.v4"
         minSdk = 26
         targetSdk = 35
-        versionCode = 19
-        versionName = "5.4"
+        versionCode = 20
+        versionName = "5.5"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
