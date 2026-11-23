@@ -1019,49 +1019,23 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun RedAICoreOrb(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val c = Offset(size.width * 0.5f, size.height * 0.5f)
-        val radius = size.minDimension * 0.43f
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFFD8FFEC), Color(0xFF42E5A3), Color(0xFF00865B), Color(0xFF06291D), Color(0xFF090D0B)),
-                center = Offset(c.x - radius * 0.24f, c.y - radius * 0.28f),
-                radius = radius * 1.55f
-            ),
-            radius = radius,
-            center = c
-        )
-        drawCircle(
-            color = Color(0x9975F4BD),
-            radius = radius * 1.12f,
-            center = c,
-            style = Stroke(width = size.minDimension * 0.025f)
-        )
-        drawCircle(
-            color = Color(0x77FFFFFF),
-            radius = radius * 0.82f,
-            center = Offset(c.x - radius * 0.08f, c.y - radius * 0.08f),
-            style = Stroke(width = size.minDimension * 0.012f)
-        )
-        drawArc(
-            color = Color(0xFFB9FFE0),
-            startAngle = -118f,
-            sweepAngle = 238f,
-            useCenter = false,
-            topLeft = Offset(c.x - radius * 1.18f, c.y - radius * 1.18f),
-            size = Size(radius * 2.36f, radius * 2.36f),
-            style = Stroke(width = size.minDimension * 0.035f)
-        )
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color.White.copy(alpha = 0.9f), Color(0x66FFFFFF), Color.Transparent),
-                center = Offset(c.x - radius * 0.38f, c.y - radius * 0.48f),
-                radius = radius * 0.52f
-            ),
-            radius = radius * 0.48f,
-            center = Offset(c.x - radius * 0.38f, c.y - radius * 0.48f)
-        )
+private fun RedAIWordmark(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(17.dp),
+        color = Color(0xFF16070B),
+        border = BorderStroke(1.dp, Color(0xFFFF3048)),
+        shadowElevation = 10.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                "R",
+                color = Color(0xFFFF3048),
+                fontSize = 39.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-3).sp
+            )
+        }
     }
 }
 
@@ -1145,14 +1119,14 @@ fun RedAIApp(
         }
     }
 
-    val black = Color(0xFF020203)
-    val panel = Color(0xFF090D0B)
-    val panelRaised = Color(0xFF101015)
-    val red = Color(0xFF00A86B)
-    val redBright = Color(0xFF32E6A0)
-    val white = Color(0xFFF8F8FA)
-    val muted = Color(0xFFA6A6AE)
-    val line = Color(0xFF24352D)
+    val black = Color(0xFF050506)
+    val panel = Color(0xFF0D0D10)
+    val panelRaised = Color(0xFF151519)
+    val red = Color(0xFFE5092A)
+    val redBright = Color(0xFFFF3048)
+    val white = Color(0xFFF8F7F8)
+    val muted = Color(0xFFA9A1A5)
+    val line = Color(0xFF382027)
 
     MaterialTheme(
         colorScheme = darkColorScheme(
@@ -1172,7 +1146,7 @@ fun RedAIApp(
                 .fillMaxSize()
                 .background(
                     androidx.compose.ui.graphics.Brush.verticalGradient(
-                        listOf(Color(0xFF071B13), Color(0xFF050B08), Color(0xFF020203))
+                        listOf(Color(0xFF17070B), Color(0xFF08080A), Color(0xFF050506))
                     )
                 )
         ) {
@@ -1180,16 +1154,16 @@ fun RedAIApp(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp),
                 shape = RoundedCornerShape(26.dp),
                 color = panel,
-                border = BorderStroke(1.dp, Color(0x6632E6A0)),
+                border = BorderStroke(1.dp, Color(0x66FF3048)),
                 shadowElevation = 16.dp
             ) {
                 Row(
                     modifier = Modifier
-                        .background(Brush.linearGradient(listOf(Color(0xFF123D2A), Color(0xFF0B2418), Color(0xFF090D0B))))
+                        .background(Brush.linearGradient(listOf(Color(0xFF310C14), Color(0xFF17070B), Color(0xFF0D0D10))))
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    RedAICoreOrb(Modifier.size(66.dp))
+                    RedAIWordmark(Modifier.size(62.dp))
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
@@ -1202,14 +1176,14 @@ fun RedAIApp(
                         )
                         Text(
                             "CREATED WITH LOVE BY LittleRedBigSmile",
-                            color = Color(0xFF75F4BD),
+                            color = Color(0xFFFF5A6A),
                             fontWeight = FontWeight.ExtraBold,
                             style = MaterialTheme.typography.labelSmall,
                             letterSpacing = 0.15.sp
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "PRIVATE INTELLIGENCE  •  CREATIVE POWER",
+                            "PRIVATE AI  •  LOCAL BY DESIGN",
                             color = muted,
                             style = MaterialTheme.typography.labelSmall,
                             letterSpacing = 0.45.sp
@@ -1217,13 +1191,13 @@ fun RedAIApp(
                     }
                     Surface(
                         shape = RoundedCornerShape(50),
-                        color = if (isModelLoaded) Color(0x3328C98A) else Color(0x2200B879),
-                        border = BorderStroke(1.dp, if (isModelLoaded) Color(0xFF35D69B) else Color(0x7735D69B))
+                        color = if (isModelLoaded) Color(0x33E5092A) else Color(0x22E5092A),
+                        border = BorderStroke(1.dp, if (isModelLoaded) Color(0xFFFF3048) else Color(0x99E5092A))
                     ) {
                         Text(
-                            if (isModelLoaded) "LOCAL" else "READY",
+                            if (isModelLoaded) "LOCAL" else "NOT LOADED",
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                            color = if (isModelLoaded) Color(0xFF6DE2B0) else Color(0xFF75F4BD),
+                            color = if (isModelLoaded) Color(0xFFFF6474) else Color(0xFFFF5A6A),
                             fontWeight = FontWeight.Black,
                             style = MaterialTheme.typography.labelSmall
                         )
@@ -1236,23 +1210,33 @@ fun RedAIApp(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = panel),
-                    border = BorderStroke(1.dp, Color(0x7735D69B)),
+                    border = BorderStroke(1.dp, Color(0x99E5092A)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
                 ) {
                     Column(
                         Modifier
-                            .background(Brush.linearGradient(listOf(Color(0xFF0D3021), Color(0xFF101712), Color(0xFF090D0B))))
+                            .background(Brush.linearGradient(listOf(Color(0xFF24090F), Color(0xFF111114), Color(0xFF0D0D10))))
                             .padding(20.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("YOUR PRIVATE AI CORE", color = Color(0xFF75F4BD), fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
-                                Spacer(Modifier.height(8.dp))
-                                Text("Built to think.\nMade to create.", color = white, fontWeight = FontWeight.Black, fontSize = 25.sp, lineHeight = 29.sp)
-                                Spacer(Modifier.height(7.dp))
-                                Text("Your local intelligence stays on this phone. No account or paid API is required for private chat.", color = muted, style = MaterialTheme.typography.bodySmall)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("LOCAL AI ASSISTANT", color = redBright, fontWeight = FontWeight.Black, letterSpacing = 1.15.sp)
+                                Spacer(Modifier.weight(1f))
+                                Text("ON-DEVICE", color = muted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                             }
-                            RedAICoreOrb(Modifier.size(100.dp))
+                            Text(
+                                "Your private assistant.",
+                                color = white,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 25.sp,
+                                lineHeight = 30.sp
+                            )
+                            Text(
+                                "The bundled AI model runs on this phone. Load it to start a conversation.",
+                                color = muted,
+                                style = MaterialTheme.typography.bodySmall,
+                                lineHeight = 19.sp
+                            )
                         }
                         Spacer(Modifier.height(14.dp))
                         Surface(
@@ -1274,15 +1258,15 @@ fun RedAIApp(
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(17.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF00B879),
+                                containerColor = Color(0xFFE5092A),
                                 disabledContainerColor = panelRaised
                             ),
                             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 2.dp)
                         ) {
-                            Text(if (status?.contains("Loading", true) == true) "PREPARING REDAI…" else "LOAD REDAI • START CREATING", fontWeight = FontWeight.Black, letterSpacing = 0.35.sp)
+                            Text(if (status?.contains("Loading", true) == true) "PREPARING REDAI…" else "LOAD REDAI", fontWeight = FontWeight.Black, letterSpacing = 0.35.sp)
                         }
                         Spacer(Modifier.height(8.dp))
-                        Text("LOCAL MODEL • Protected loading • Chats stay on this phone", color = muted, style = MaterialTheme.typography.labelSmall)
+                        Text("LOCAL MODEL • PRIVATE CHAT HISTORY", color = muted, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             } else {
@@ -1505,13 +1489,13 @@ fun RedAIApp(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            border = BorderStroke(1.dp, Color(0x9935D69B)),
+                            border = BorderStroke(1.dp, Color(0x99E5092A)),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = redBright)
                         ) {
                             Text("COPY CRASH & DEVICE DIAGNOSTICS", fontWeight = FontWeight.Black, letterSpacing = 0.2.sp)
                         }
                         if (diagnosticsCopied) {
-                            Text("Diagnostics copied. Paste them into your support chat.", color = Color(0xFF6DE2B0), style = MaterialTheme.typography.bodySmall)
+                            Text("Diagnostics copied. Paste them into your support chat.", color = Color(0xFFFF6474), style = MaterialTheme.typography.bodySmall)
                         }
                         Spacer(Modifier.height(12.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1655,16 +1639,16 @@ fun RedAIApp(
                                 bottomStart = if (isUser) 20.dp else 6.dp,
                                 bottomEnd = if (isUser) 6.dp else 20.dp
                             ),
-                            color = if (isUser) Color(0xFF0D3021) else Color(0xFF101712),
+                            color = if (isUser) Color(0xFF24090F) else Color(0xFF111114),
                             border = BorderStroke(
                                 1.dp,
-                                if (isUser) Color(0x9935D69B) else Color(0xFF29352E)
+                                if (isUser) Color(0x99E5092A) else Color(0xFF3A2028)
                             ),
                             shadowElevation = if (isUser) 8.dp else 4.dp
                         ) {
                             Column(
                                 Modifier
-                                    .background(Brush.linearGradient(if (isUser) listOf(Color(0xFF103D2A), Color(0xFF0D2419)) else listOf(Color(0xFF1A241E), Color(0xFF0C120E))))
+                                    .background(Brush.linearGradient(if (isUser) listOf(Color(0xFF310C14), Color(0xFF1B090E)) else listOf(Color(0xFF1B1215), Color(0xFF09090B))))
                                     .padding(horizontal = 15.dp, vertical = 12.dp)
                             ) {
                                 Text(
@@ -1723,7 +1707,7 @@ fun RedAIApp(
                             border = BorderStroke(1.dp, line)
                         ) {
                             Text(
-                                "RED AI IS THINKING…",
+                                "REDAI IS RESPONDING…",
                                 modifier = Modifier.padding(horizontal = 15.dp, vertical = 11.dp),
                                 color = redBright,
                                 fontWeight = FontWeight.Bold,
@@ -1766,7 +1750,7 @@ fun RedAIApp(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Brush.horizontalGradient(listOf(Color(0xFF0B2418), Color(0xFF0C120E), Color(0xFF0B2418))))
+                    .background(Brush.horizontalGradient(listOf(Color(0xFF17070B), Color(0xFF09090B), Color(0xFF17070B))))
                     .padding(10.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
