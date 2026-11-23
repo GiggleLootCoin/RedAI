@@ -1274,7 +1274,7 @@ fun RedAIApp(
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(17.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFE5092A),
+                                containerColor = Color(0xFF00B879),
                                 disabledContainerColor = panelRaised
                             ),
                             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 2.dp)
