@@ -27,6 +27,7 @@ import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
 import android.os.Bundle
+import android.os.StatFs
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import java.util.Locale
@@ -795,6 +796,11 @@ class MainActivity : ComponentActivity() {
             return digestMatches
         }
         if (valid(destination)) return@withContext destination
+        val bundledLength = assets.openFd("RedAI.gguf").use { it.length }
+        val availableBytes = StatFs(dir.absolutePath).availableBytes
+        if (availableBytes < bundledLength + 64L * 1024L * 1024L) {
+            throw IllegalStateException("Not enough free storage to install RedAI's local brain. Free at least 750 MB and try again.")
+        }
         temporary.delete()
         assets.open("RedAI.gguf").buffered().use { input ->
             temporary.outputStream().buffered().use { output -> input.copyTo(output, 1024 * 1024) }
