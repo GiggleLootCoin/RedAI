@@ -151,6 +151,7 @@ jobs:
           grep -Fq 'ON-DEVICE TEXT RECOGNITION (OCR)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Eq 'ImageLabeling|ImageLabeler|ImageLabel' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'SpeechRecognizer.isRecognitionAvailable' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'android.speech.RecognitionService' android-ui/app/src/main/AndroidManifest.xml
           grep -Fq 'appendHistoryExchange' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'generate(modelPrompt, allowSearch = false)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'val searchRequested = allowSearch && needsFreshInfo(query)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
