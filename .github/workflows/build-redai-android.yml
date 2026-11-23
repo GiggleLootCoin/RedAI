@@ -159,6 +159,8 @@ jobs:
           ! grep -Fq 'android.permission.CAMERA' android-ui/app/src/main/AndroidManifest.xml
           grep -Fq 'contextSize = 512L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'numThreads = 2' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'StatFs(dir.absolutePath).availableBytes' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'Not enough free storage to install RedAI' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'modelLoadRequested = true' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'startup stays lightweight' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'lifecycleScope.launch { autoLoadSavedModel() }' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
