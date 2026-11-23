@@ -1480,6 +1480,48 @@ fun RedAIApp(
                                 Text("CLOSE", color = redBright, fontWeight = FontWeight.Bold)
                             }
                         }
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                                val memory = ActivityManager.MemoryInfo()
+                                manager.getMemoryInfo(memory)
+                                val exits = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                                    manager.getHistoricalProcessExitReasons(context.packageName, 0, 5).joinToString("\n") {
+                                        "• reason=${it.reason}, time=${it.timestamp}, description=${it.description ?: "none"}"
+                                    }.ifBlank { "No previous process-exit records returned by Android." }
+                                } else "Android process-exit history requires Android 11 or newer."
+                                val crashPrefs = context.getSharedPreferences("redai_diagnostics", Context.MODE_PRIVATE)
+                                val lastCrash = crashPrefs.getString("last_crash", "No recorded Java crash.") ?: "No recorded Java crash."
+                                val report = buildString {
+                                    appendLine("RedAI diagnostics")
+                                    appendLine("Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+                                    appendLine("Android: ${android.os.Build.VERSION.RELEASE} (SDK ${android.os.Build.VERSION.SDK_INT})")
+                                    appendLine("ABI: ${android.os.Build.SUPPORTED_ABIS.joinToString()}")
+                                    appendLine("App: ${context.packageName}")
+                                    appendLine("Memory class: ${manager.memoryClass} MB")
+                                    appendLine("Available RAM: ${memory.availMem / (1024L * 1024L)} MB / ${memory.totalMem / (1024L * 1024L)} MB")
+                                    appendLine("Free app storage: ${android.os.StatFs(context.filesDir.absolutePath).availableBytes / (1024L * 1024L)} MB")
+                                    appendLine("Model loaded: ${isModelLoaded}")
+                                    appendLine("Last saved Java crash: ${crashPrefs.getLong("last_crash_at", 0L)}")
+                                    appendLine(lastCrash.take(4000))
+                                    appendLine("Recent Android process exits:")
+                                    appendLine(exits)
+                                }
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("RedAI diagnostics", report))
+                                diagnosticsCopied = true
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.dp, Color(0x99FF3B4F)),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = redBright)
+                        ) {
+                            Text("COPY CRASH & DEVICE DIAGNOSTICS", fontWeight = FontWeight.Black, letterSpacing = 0.2.sp)
+                        }
+                        if (diagnosticsCopied) {
+                            Text("Diagnostics copied. Paste them into your support chat.", color = Color(0xFF6DE2B0), style = MaterialTheme.typography.bodySmall)
+                        }
                         Spacer(Modifier.height(12.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
