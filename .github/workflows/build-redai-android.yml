@@ -219,7 +219,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RedAI-Android-v5.1-arm64
+          name: RedAI-Android-v5.2-arm64
           path: |
             release/RedAI-Android-v5.1.apk
             release/SHA256SUMS.txt
