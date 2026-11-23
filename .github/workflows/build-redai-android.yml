@@ -168,6 +168,9 @@ jobs:
           ! grep -Fq 'android.permission.CAMERA' android-ui/app/src/main/AndroidManifest.xml
           grep -Fq 'contextSize = 512L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
 grep -Fq 'minimumFreeRamMb = 1408L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+grep -Fq 'Color(0xFF00B879)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+! grep -Fq 'Color(0xFFE5092A)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+grep -Fq 'android:fillColor="#00B879"' android-ui/app/src/main/res/drawable/ic_redai_launcher_foreground.xml
 grep -Fq 'availableRamMb < minimumFreeRamMb' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'numThreads = 2' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'StatFs(dir.absolutePath).availableBytes' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
