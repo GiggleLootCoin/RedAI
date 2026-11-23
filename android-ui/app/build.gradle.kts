@@ -13,7 +13,7 @@ android {
         applicationId = "com.giggleloot.redai.v4"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
+        versionCode = 22
         versionName = "5.6.0"
         ndk { abiFilters += listOf("arm64-v8a") }
     }
