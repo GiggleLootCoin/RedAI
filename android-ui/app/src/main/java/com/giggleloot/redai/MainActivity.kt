@@ -705,7 +705,7 @@ class MainActivity : ComponentActivity() {
                 activeEngine.load(
                     modelPath = file.absolutePath,
                     params = SmolLM.InferenceParams(
-                        contextSize = 256L,
+                        contextSize = 512L,
                         numThreads = 2,
                         temperature = 0.70f,
                         topP = 0.95f,
