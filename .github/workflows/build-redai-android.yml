@@ -190,8 +190,8 @@ grep -Fq 'availableRamMb < minimumFreeRamMb' android-ui/app/src/main/java/com/gi
           grep -Fq 'The bundled GGUF failed its SHA-256 or file-format check.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'redWaysOfThinkingPrompt(query)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "5.4"' android-ui/app/build.gradle.kts
-          grep -q 'versionCode = 19' android-ui/app/build.gradle.kts
+          grep -q 'versionName = "5.5"' android-ui/app/build.gradle.kts
+          grep -q 'versionCode = 20' android-ui/app/build.gradle.kts
           grep -Fq 'SmolChatAndroidLib:V2.1' android-ui/app/build.gradle.kts
           grep -q 'android:icon="@mipmap/ic_launcher"' android-ui/app/src/main/AndroidManifest.xml
           test -s android-ui/app/src/main/res/drawable/ic_redai_launcher.xml
