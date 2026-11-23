@@ -1,64 +1,63 @@
 # RedAI
 
-RedAI Android: the RedUI interface with the RedAI model bundled and installed at build time. It accepts no replacement models.
+RedAI is an Android AI app created and personalized by **Red (LittleRedBigSmile)**. It combines a bundled local language model, an Android interface, private on-device chat history, Red's Ways Of Thinking, and optional online tools.
 
-## Current build target
+## Current development build: Android 5.4
 
-- Foundation: **MiniCPM5-1B Q4_K_M**
-- Personalization: **Red's Ways Of Thinking**
-- Personalization training: **RedAI MiniCPM5-1B LoRA, merged and quantized to GGUF Q4_K_M**
-- Quantization: **GGUF Q4_K_M**
-- Runtime: **SmolChatAndroidLib V2.1 / llama.cpp, ARM64 CPU feature detection, streaming**
-- Runtime target: **Android 12 / Galaxy A12-class hardware**
-- Design goal: **free, offline-first local inference**, with optional external tools only when explicitly invoked
+- Foundation: MiniCPM5-1B Q4_K_M GGUF, bundled by the GitHub Actions build.
+- Personalization: RedAI fine-tuned candidate plus Red's Ways Of Thinking framework.
+- Runtime: SmolChatAndroidLib V2.1 / llama.cpp, ARM64 CPU runtime, streamed output.
+- Runtime profile: 512-token context, 2 CPU threads, temperature 0.70, top-p 0.95, top-k 40, repeat penalty 1.08.
+- Model load is user-initiated to avoid consuming phone memory at startup.
+- Up to 30 local conversation sessions, with switching and deletion.
+- Optional DuckDuckGo/Wikipedia search and optional Tavily search.
+- Local text-file reading, PDF text extraction (up to five pages), and image OCR.
+- Android system speech recognition (tap-to-talk) and installed Android TTS voices.
+- Optional image generation through external AI Horde volunteer workers.
 
-## What was improved
+## What works and what does not
 
-The training pipeline is deliberately conservative because the personalization corpus is small. RedAI now:
+| Capability | Current state |
+|---|---|
+| Bundled local GGUF and ARM64 inference | Included; CI verifies model checksum and runtime smoke test |
+| Local chat and saved sessions | Implemented |
+| Red's Ways Of Thinking context | Included in runtime prompts |
+| Optional web search | Implemented; requires internet |
+| Text/PDF/image OCR | Implemented on-device |
+| Camera capture | Captures a photo; analysis is OCR-only |
+| Microphone | Tap-to-talk through Android speech recognition |
+| Speech output | Android TTS voices already installed on the phone |
+| Custom cloned Red voice | Not integrated |
+| Continuous hands-free conversation | Not implemented |
+| Full visual scene understanding | Not implemented; OCR only |
+| Local/offline image generation | Not implemented; AI Horde sends the prompt to external volunteer workers |
+| Galaxy A12 performance validation | Requires testing on the physical handset |
 
-- trains only on assistant completion tokens instead of wasting capacity learning to reproduce system/user prompts;
-- uses the MiniCPM5 chat template consistently for training and llama.cpp verification;
-- uses the separately trained RedAI MiniCPM5-1B checkpoint, with Red's identity and framework material included in the fine-tuning corpus and runtime prompt;
-- preserves Red's Ways Of Thinking as personalized material while teaching the model to distinguish framework/perspective from independently verified fact;
-- includes identity, correction, honesty, tool-use, privacy, planning, math, ambiguity, and failure-reporting anchors;
-- verifies non-empty output, identity, creator, normal chat, math, capabilities, app/project naming, current-information honesty, and hidden response-planning leakage before packaging.
+Do not interpret a successful GitHub Actions build as proof of physical-device stability, speed, microphone compatibility, thermal performance, or low-memory reliability. Those require a real Android 12 handset test.
 
-## Identity
+## Privacy and network behavior
 
-RedAI is created and personalized by Red, also known as LittleRedBigSmile. The user-facing identity is RedAI; the human creator is Red. The model does not claim ownership of the underlying foundation weights.
+- Normal local model inference and saved conversations remain on the device.
+- Web lookup is optional and only used for requests that need current information or explicitly ask for research. The latest question is sent to the selected search provider.
+- Image generation is a separate online feature. Its prompt is sent to AI Horde; it is not private on-device generation.
+- Microphone input uses the Android speech-recognition service. Offline recognition depends on the installed service and its language packs.
+- Speech output uses the Android TTS engine and its installed voices. No custom Red voice pack is bundled.
 
-## Low-memory runtime settings
+## Build and verification
 
-- Context: **512 tokens** in the v5.3 Galaxy A12-oriented build
-- Temperature: **0.70**
-- Top-p: **0.95**
-- Top-k: **40**
-- Repeat penalty: **1.08**
-- Output: **104 pieces for ordinary replies; up to 176 for explicitly detailed replies**
-- CPU threads: **2** in the v5.3 low-memory build
-- Memory mapping: **enabled**
-- GPU layers: **0 by default for stability**
+GitHub Actions downloads the exact GGUF candidate, verifies its SHA-256 and GGUF header, runs a llama.cpp smoke test, builds the ARM64 Android APK, checks the APK contents and source-level regression conditions, and verifies the resulting APK checksum.
 
-The bundled MiniCPM5-1B Q4_K_M checkpoint is approximately 688 MB and was selected as the stronger personalized 1B-class candidate. The app streams generated text and reports measured tokens per second. Model loading is user-initiated rather than automatic at launch. Before copying the bundled model, it checks for roughly 750 MB of free storage. The reduced context and thread count are stability measures, not a guarantee of smooth performance on every handset. Version 5.4 also removes an unused image-labeling dependency and aligns image-analysis code with the lean dependency set. Actual Galaxy A12 speed and memory use still require on-device measurement.
+The current workflow uses Gradle's **debug build variant**. The APK is debug-signed for installation/testing; this is not a production release-signing configuration. The v5.4 artifact is available from the Actions run that produced it.
 
-## Free build
+## Creator and foundation-model attribution
 
-RedAI is built from the repository using GitHub Actions and open-source tooling. No paid API, paid model host, subscription, or proprietary inference service is required to build or run the GGUF locally.
+RedAI's product identity, personalization, application code and Red's Ways Of Thinking integration are created by Red aka LittleRedBigSmile. The underlying MiniCPM5 foundation model is third-party software/model content and is not claimed as authored by Red.
 
-## Android v5.4 runtime
+## Next release gates
 
-The Android app uses the Apache-2.0 SmolChatAndroidLib V2.1 runtime, which selects an ARM64 native build based on CPU features and supports streamed token output. The bundled GGUF is the fine-tuned RedAI MiniCPM5-1B candidate, not the unpersonalized Qwen3.5-0.8B test model. The app keeps the model bundled and local, stores up to 30 separate conversations with open/delete controls, restores the recent context of the selected chat, and uses a smaller relevant subset of Red's Ways Of Thinking instead of inserting all 38 statements into every related prompt. It supports local text-file reading, PDF text extraction through OCR (first five pages), and image OCR; attachment contents are never sent to web search, and the app does not claim visual scene understanding or camera/screen awareness. Tap-to-talk checks that an Android speech-recognition service is available before launching it, requests offline recognition where the installed service supports it, and gives a clear fallback message when no recognizer is installed. Replies can be spoken with Android TTS. Image attachments and camera photos currently provide OCR text only; full visual scene understanding is not implemented. After a generation-time out-of-memory error, the app attempts to stop and close the native model before allowing a retry. The app displays measured generation speed. A successful CI build is not a substitute for testing on the physical Galaxy A12.
+1. Complete feature implementations that are currently listed as unavailable.
+2. Add deterministic tests for each new capability and preserve model/chat regression coverage.
+3. Test cold start, offline chat, long sessions, memory pressure, audio input/output, attachments, and recovery on the target Galaxy A12.
+4. Configure and validate a production signing/update path before publishing a production release.
 
-## Optional live web search
-
-The GGUF remains fully local and independent of web access. The RedAI Android app includes an optional search integration with no-key DuckDuckGo and Wikipedia providers, plus an optional Tavily provider (current free tier: 1,000 credits/month, no credit card). Search runs only for explicit research/verification or current-information requests. Only the newest user question is sent to the provider; ordinary local chat remains local.
-
-See [WEB_SEARCH.md](WEB_SEARCH.md) for provider costs, privacy behavior, Android setup, the standalone bridge for compatible tool-calling frontends, and the ChatterUI limitation. The independent bridge is in [bridge/](bridge/).
-
-## Release
-
-The redai-latest GitHub Release contains the verified RedAI.gguf package and SHA-256 checksum. The release is rebuilt whenever the main training/build pipeline is deliberately updated. Web search is provided by the app/bridge, not baked into or required by the GGUF.
-
-## Android speech voices
-
-Settings can cycle through English voices already installed in the phone's Android text-to-speech service, preferring offline voices. RedAI does not bundle proprietary voice packs; the available voices depend on the installed Android TTS engine.
+See [WEB_SEARCH.md](WEB_SEARCH.md) for search-provider behavior and [RED_AI_COMPLETE_SPEC.md](RED_AI_COMPLETE_SPEC.md) for the product acceptance requirements.
