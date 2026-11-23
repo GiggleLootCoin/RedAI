@@ -87,6 +87,8 @@ class MainActivity : ComponentActivity() {
     private var isGenerating = false
     private var isLoadingModel = false
     private var tts: TextToSpeech? = null
+    private var selectedTtsVoiceName: String = "system"
+    private var ttsVoiceLabel by mutableStateOf("System default")
     private val prefs by lazy { getSharedPreferences("redai", Context.MODE_PRIVATE) }
     private val historyPrefs by lazy { getSharedPreferences("redai_chat_history", Context.MODE_PRIVATE) }
     private val sessionsPrefs by lazy { getSharedPreferences("redai_chat_sessions", Context.MODE_PRIVATE) }
@@ -97,7 +99,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         webEnabled = prefs.getBoolean("web_enabled", true)
         webProvider = prefs.getString("web_provider", "duckduckgo") ?: "duckduckgo"
-        tts = TextToSpeech(this) { if (it == TextToSpeech.SUCCESS) tts?.language = Locale.US }
+        selectedTtsVoiceName = prefs.getString("tts_voice_name", "system") ?: "system"
+        tts = TextToSpeech(this) { result ->
+            if (result == TextToSpeech.SUCCESS) {
+                val engine = tts ?: return@TextToSpeech
+                engine.language = Locale.US
+                val voices = availableOfflineEnglishVoices(engine)
+                val saved = voices.firstOrNull { it.name == selectedTtsVoiceName }
+                if (saved != null) {
+                    engine.voice = saved
+                    ttsVoiceLabel = saved.name
+                } else {
+                    selectedTtsVoiceName = "system"
+                    ttsVoiceLabel = "System default"
+                }
+            }
+        }
         ensureSessionStore()
         refreshChatSummaries()
         render("Preparing RedAI's private local brain on this phone…")
@@ -143,6 +160,8 @@ class MainActivity : ComponentActivity() {
                     })
                 },
                 onImageGenerate = { prompt, callback -> generateImage(prompt, callback) },
+                selectedVoiceLabel = ttsVoiceLabel,
+                onCycleVoice = { cycleTtsVoice() },
                 onPersonaChanged = { name, instructions ->
                     prefs.edit().putString("persona_name", name.trim().take(48))
                         .putString("persona_instructions", instructions.trim().take(1600)).apply()
@@ -264,6 +283,32 @@ class MainActivity : ComponentActivity() {
                 photo.delete()
                 render("Could not analyse the camera photo: " + (e.message ?: "unknown image error"))
             }
+        }
+    }
+
+    private fun availableOfflineEnglishVoices(engine: TextToSpeech): List<android.speech.tts.Voice> =
+        engine.voices.orEmpty()
+            .filter { it.locale.language == "en" && !it.isNetworkConnectionRequired }
+            .sortedWith(compareBy<android.speech.tts.Voice>({ it.locale.country }, { it.name }))
+
+    private fun cycleTtsVoice(): String {
+        val engine = tts ?: return "System default (TTS unavailable)"
+        val voices = availableOfflineEnglishVoices(engine)
+        if (voices.isEmpty()) {
+            ttsVoiceLabel = "System default (no offline English voices found)"
+            return ttsVoiceLabel
+        }
+        val current = voices.indexOfFirst { it.name == selectedTtsVoiceName }
+        val next = voices[(current + 1).mod(voices.size)]
+        return runCatching {
+            engine.voice = next
+            selectedTtsVoiceName = next.name
+            ttsVoiceLabel = next.name
+            prefs.edit().putString("tts_voice_name", next.name).apply()
+            ttsVoiceLabel
+        }.getOrElse {
+            ttsVoiceLabel = "System default (voice unavailable)"
+            ttsVoiceLabel
         }
     }
 
@@ -940,6 +985,8 @@ fun RedAIApp(
     onWebProviderChanged: (String) -> Unit,
     onTavilyKeySaved: (String) -> Unit,
     onImageGenerate: (String, (String, String?) -> Unit) -> Unit,
+    selectedVoiceLabel: String,
+    onCycleVoice: () -> String,
     onPersonaChanged: (String, String) -> Unit
 ) {
     val context = LocalContext.current
@@ -966,6 +1013,7 @@ fun RedAIApp(
     var showChats by remember { mutableStateOf(false) }
     var pendingDeleteId by remember { mutableStateOf<String?>(null) }
     var apiKeyInput by remember { mutableStateOf("") }
+    var voiceLabel by remember { mutableStateOf(selectedVoiceLabel) }
     var personaName by remember { mutableStateOf(context.getSharedPreferences("redai", Context.MODE_PRIVATE).getString("persona_name", "RedAI") ?: "RedAI") }
     var personaInstructions by remember { mutableStateOf(context.getSharedPreferences("redai", Context.MODE_PRIVATE).getString("persona_instructions", "") ?: "") }
     var showImageMaker by remember { mutableStateOf(false) }
@@ -1391,6 +1439,13 @@ fun RedAIApp(
                             }) { Text("SAVE KEY", color = redBright, fontWeight = FontWeight.Bold) }
                         }
                         Spacer(Modifier.height(14.dp))
+                        Text("SPEECH VOICE", color = redBright, fontWeight = FontWeight.Black)
+                        Text("Cycles through English voices already installed on your Android text-to-speech service. Only offline voices are offered; availability depends on your phone.", color = muted, style = MaterialTheme.typography.bodySmall)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(voiceLabel, color = white, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, maxLines = 2)
+                            TextButton(onClick = { voiceLabel = onCycleVoice() }) { Text("NEXT VOICE", color = redBright, fontWeight = FontWeight.Bold) }
+                        }
+                        Spacer(Modifier.height(14.dp))
                         Text("CREATE A CHARACTER PROFILE", color = redBright, fontWeight = FontWeight.Black)
                         Text("Save a local role, tone or specialist focus. It guides replies without replacing RedAI's core rules.", color = muted, style = MaterialTheme.typography.bodySmall)
                         OutlinedTextField(value = personaName, onValueChange = { personaName = it.take(48) }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Character name") }, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = red, unfocusedBorderColor = line, focusedTextColor = white, unfocusedTextColor = white))
@@ -1400,7 +1455,7 @@ fun RedAIApp(
                             TextButton(onClick = { onPersonaChanged(personaName, personaInstructions) }) { Text("SAVE CHARACTER", color = redBright, fontWeight = FontWeight.Black) }
                         }
                         Text(
-                            "Attachments: text, PDFs (first five pages) and image OCR. Images are not visually interpreted. Attachment contents stay on this phone and are never sent to web search. Voice uses Android speech and text-to-speech services.\n\nOnly a normal user query is sent to the selected search provider. Chat history stays on this phone.",
+                            "Attachments: text, PDFs (first five pages) and image OCR. Images are not visually interpreted. Attachment contents stay on this phone and are never sent to web search. Voice input uses the installed Android speech recognizer; speech output uses installed offline English TTS voices when available.\n\nOnly a normal user query is sent to the selected search provider. Chat history stays on this phone.",
                             color = muted,
                             style = MaterialTheme.typography.bodySmall
                         )
