@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
     private var webProvider = "duckduckgo"
     private var isGenerating = false
     private var isLoadingModel = false
+    private var modelLoadRequested = false
     private var tts: TextToSpeech? = null
     private var selectedTtsVoiceName: String = "system"
     private var ttsVoiceLabel by mutableStateOf("System default")
@@ -117,14 +118,13 @@ class MainActivity : ComponentActivity() {
         }
         ensureSessionStore()
         refreshChatSummaries()
-        render("Preparing RedAI's private local brain on this phone…")
-        lifecycleScope.launch { autoLoadSavedModel() }
+        render("RedAI is ready. Load the private local brain when you are ready; startup stays lightweight.")
     }
 
     private fun render(status: String? = null) {
         setContent {
             RedAIApp(
-                onRetryModel = { lifecycleScope.launch { autoLoadSavedModel() } },
+                onRetryModel = { modelLoadRequested = true; lifecycleScope.launch { autoLoadSavedModel() } },
                 onNewChat = { startNewConversation() },
                 onSwitchChat = { id -> switchConversation(id) },
                 onDeleteChat = { id -> deleteConversation(id) },
@@ -667,6 +667,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private suspend fun autoLoadSavedModel(reset: Boolean = false, restoreHistory: Boolean = true) {
+        if (!modelLoadRequested) {
+            render("Your chats are ready. Tap LOAD REDAI GGUF when you want to start the local model.")
+            return
+        }
         if (isLoadingModel || (modelReady && !reset)) return
         isLoadingModel = true
         try {
