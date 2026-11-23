@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
     }
     private var pendingCameraUri: Uri? = null
     private var pendingCameraFile: File? = null
-    private var engine = SmolLM()
+    private var engine: SmolLM? = null
     private var modelFile: File? = null
     private var modelReady by mutableStateOf(false)
     private var isLoadingModel by mutableStateOf(false)
@@ -704,9 +704,9 @@ class MainActivity : ComponentActivity() {
         isLoadingModel = true
         try {
             if (reset && modelReady) {
-                engine.stop()
-                withContext(Dispatchers.IO) { engine.close() }
-                engine = SmolLM()
+                engine?.stop()
+                withContext(Dispatchers.IO) { engine?.close() }
+                engine = null
                 modelReady = false
             }
             render(if (reset) "Starting a fresh private conversation…" else "Checking phone memory and loading the local brain…")
@@ -719,8 +719,9 @@ class MainActivity : ComponentActivity() {
                 )
             }
             val file = copyBundledModel()
+            val activeEngine = engine ?: SmolLM().also { engine = it }
             withContext(Dispatchers.IO) {
-                engine.load(
+                activeEngine.load(
                     modelPath = file.absolutePath,
                     params = SmolLM.InferenceParams(
                         contextSize = 512L,
@@ -735,15 +736,16 @@ class MainActivity : ComponentActivity() {
                         chatTemplate = miniCpm5NoThinkTemplate()
                     )
                 )
-                engine.addSystemPrompt(baseSystemPrompt())
-                if (restoreHistory) restoreRecentConversation()
+                activeEngine.addSystemPrompt(baseSystemPrompt())
+                if (restoreHistory) restoreRecentConversation(activeEngine)
             }
             modelFile = file
             modelReady = true
             render("LOCAL ENGINE READY • Your bundled model is running on this phone.")
         } catch (e: Throwable) {
-            runCatching { withContext(Dispatchers.IO) { engine.stop(); engine.close() } }
-            engine = SmolLM()
+            val failedEngine = engine
+            runCatching { withContext(Dispatchers.IO) { failedEngine?.stop(); failedEngine?.close() } }
+            engine = null
             modelReady = false
             val reason = when (e) {
                 is OutOfMemoryError -> "This phone ran out of available memory while loading the model. Close other apps and retry; the reduced-memory profile is now active."
@@ -776,7 +778,7 @@ class MainActivity : ComponentActivity() {
         Do not volunteer technical foundation-model names. If asked about the foundation model, explain that your underlying foundation model is the one represented by the GGUF file currently loaded; Red created and personalized RedAI, not the third-party model weights.
     """.trimIndent()
 
-    private suspend fun restoreRecentConversation() {
+    private suspend fun restoreRecentConversation(activeEngine: SmolLM) {
         val history = getSharedPreferences("redai_chat_history", Context.MODE_PRIVATE)
         val saved = runCatching { JSONArray(history.getString("messages", "[]") ?: "[]") }.getOrNull() ?: return
         val recent = (0 until saved.length()).mapNotNull { index ->
@@ -787,8 +789,8 @@ class MainActivity : ComponentActivity() {
             if (role in setOf("user", "assistant") && text.isNotBlank()) Message(role, text, savedContext) else null
         }.takeLast(6)
         recent.forEach { message ->
-            if (message.role == "user") engine.addUserMessage(message.context ?: message.text)
-            else engine.addAssistantMessage(message.text)
+            if (message.role == "user") activeEngine.addUserMessage(message.context ?: message.text)
+            else activeEngine.addAssistantMessage(message.text)
         }
     }
 
@@ -919,7 +921,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun generate(userText: String, allowSearch: Boolean = true, callback: (String, Boolean, Float) -> Unit) {
-        if (!modelReady) {
+        val activeEngine = engine
+        if (!modelReady || activeEngine == null) {
             callback("RedAI's private local engine is still loading. Please try again shortly.", true, 0f)
             return
         }
@@ -972,12 +975,12 @@ class MainActivity : ComponentActivity() {
                 val maxPieces = if (listOf("in detail", "step by step", "step-by-step", "write a song", "write a poem", "full explanation", "comprehensive").any { query.lowercase().contains(it) }) 176 else 104
                 val answer = StringBuilder()
                 var pieces = 0
-                engine.getResponseAsFlow(prompt).flowOn(Dispatchers.Default).collect { piece ->
+                activeEngine.getResponseAsFlow(prompt).flowOn(Dispatchers.Default).collect { piece ->
                     if (piece == "[EOG]") return@collect
                     if (piece.isNotEmpty()) {
                         answer.append(piece)
                         pieces += 1
-                        if (pieces >= maxPieces) engine.stop()
+                        if (pieces >= maxPieces) activeEngine.stop()
                         if (pieces % 2 == 0 || pieces >= maxPieces) {
                             callback(answer.toString(), false, 0f)
                         }
@@ -998,11 +1001,11 @@ class MainActivity : ComponentActivity() {
                         append(searchResult?.error ?: if (!webEnabled) "Live search is switched off." else "The phone is offline; no live search was performed.")
                     }
                 }
-                callback(finalAnswer, true, engine.getResponseGenerationSpeed())
+                callback(finalAnswer, true, activeEngine.getResponseGenerationSpeed())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: OutOfMemoryError) {
-                engine.stop()
+                activeEngine.stop()
                 modelReady = false
                 render("Android ran out of memory during generation. Close background apps before loading the model again.")
                 callback("RedAI ran out of available memory while answering. Your saved chat remains on this phone.", true, 0f)
@@ -1017,11 +1020,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         generationJob?.cancel()
-        runCatching { engine.stop() }
+        runCatching { engine?.stop() }
         tts?.stop()
         tts?.shutdown()
         // Do not free native model memory while a native load or generation call is still active.
-        if (modelReady && !isGenerating && !isLoadingModel) runCatching { engine.close() }
+        if (modelReady && !isGenerating && !isLoadingModel) runCatching { engine?.close() }
+        engine = null
         modelReady = false
         super.onDestroy()
 }
