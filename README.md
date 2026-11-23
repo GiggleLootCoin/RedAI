@@ -39,7 +39,7 @@ RedAI is created and personalized by Red, also known as LittleRedBigSmile. The u
 - Memory mapping: **enabled**
 - GPU layers: **0 by default for stability**
 
-The bundled MiniCPM5-1B Q4_K_M checkpoint is approximately 688 MB and was selected as the stronger personalized 1B-class candidate. Its no-think template avoids spending the phone's limited CPU budget on hidden reasoning for ordinary chat. Short replies are capped to reduce unnecessary decoding; longer limits are used only when the request calls for detail. The app streams generated text and reports measured tokens per second. Actual Galaxy A12 speed still requires on-device measurement.
+The bundled MiniCPM5-1B Q4_K_M checkpoint is approximately 688 MB and was selected as the stronger personalized 1B-class candidate. Its no-think template avoids spending the phone's limited CPU budget on hidden reasoning for ordinary chat. Short replies are capped to reduce unnecessary decoding; longer limits are used only when the request calls for detail. The app streams generated text and reports measured tokens per second. Model loading is user-initiated rather than automatic at launch, uses a reduced 512-token context and two CPU threads, and checks for roughly 750 MB of free storage before copying the bundled model. Actual Galaxy A12 speed still requires on-device measurement.
 
 ## Free build
 
