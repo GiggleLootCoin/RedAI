@@ -32,6 +32,90 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Prepare pinned native engine with conservative ARM64 dispatch
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch V2.1 --recurse-submodules https://github.com/woheller69/SmolChatAndroidLib.git /tmp/SmolChatAndroidLib
+          test -f /tmp/SmolChatAndroidLib/smollm/llama.cpp/include/llama.h
+          cp -a /tmp/SmolChatAndroidLib/smollm android-ui/smollm
+          cat > android-ui/smollm/build.gradle.kts <<'EOF'
+          plugins {
+              id("com.android.library")
+              id("org.jetbrains.kotlin.android")
+          }
+          android {
+              namespace = "io.shubham0204.smollm"
+              compileSdk = 35
+              ndkVersion = "27.2.12479018"
+              defaultConfig {
+                  minSdk = 26
+                  ndk { abiFilters += listOf("arm64-v8a") }
+                  externalNativeBuild {
+                      cmake {
+                          arguments += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
+                          arguments += "-DCMAKE_BUILD_TYPE=Release"
+                          arguments += "-DBUILD_SHARED_LIBS=ON"
+                          arguments += "-DLLAMA_BUILD_COMMON=ON"
+                          arguments += "-DLLAMA_CURL=OFF"
+                          arguments += "-DGGML_LLAMAFILE=OFF"
+                      }
+                  }
+              }
+              buildTypes {
+                  release {
+                      isMinifyEnabled = false
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+              externalNativeBuild {
+                  cmake {
+                      path = file("src/main/cpp/CMakeLists.txt")
+                      version = "3.22.1"
+                  }
+              }
+          }
+          dependencies {
+              implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+          }
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          cmake = Path("android-ui/smollm/src/main/cpp/CMakeLists.txt")
+          source = cmake.read_text(encoding="utf-8")
+          pattern = r'(?s)(if \(\$\{ANDROID_ABI\} STREQUAL "arm64-v8a"\)\s+build_library_arm64\("smollm_v8" "-march=armv8-a"\)).*?\nendif\(\)'
+          source, count = re.subn(pattern, r'\1\nendif()', source, count=1)
+          if count != 1:
+              raise SystemExit("Could not reduce native ARM64 variants to the safe ARMv8 baseline.")
+          cmake.write_text(source, encoding="utf-8")
+          kt = Path("android-ui/smollm/src/main/java/io/shubham0204/smollm/SmolLM.kt")
+          source = kt.read_text(encoding="utf-8")
+          start = source.index("            // check if the following CPU features")
+          end = source.index("\n        }\n\n        /**", start)
+          replacement = """            // Use the conservative ARMv8-A library on all ARM64 phones.
+                      // This avoids selecting optional CPU extensions that some devices
+                      // or vendor kernels may report incorrectly.
+                      if (Build.SUPPORTED_ABIS.contains("arm64-v8a")) {
+                          Log.i(logTag, "Loading conservative ARMv8 baseline library")
+                          System.loadLibrary("smollm_v8")
+                      } else if (Build.SUPPORTED_32_BIT_ABIS.firstOrNull() == "armeabi-v7a") {
+                          Log.i(logTag, "Loading ARMv7 baseline library")
+                          System.loadLibrary("smollm_v7a")
+                      } else {
+                          Log.i(logTag, "Loading universal baseline library")
+                          System.loadLibrary("smollm")
+                      }"""
+          source = source[:start] + replacement + source[end:]
+          kt.write_text(source, encoding="utf-8")
+          assert "Loading conservative ARMv8 baseline library" in source
+          assert 'build_library_arm64("smollm_v8" "-march=armv8-a")' in cmake.read_text(encoding="utf-8")
+          print("Pinned SmolChatAndroidLib V2.1 and disabled optional ARM64 CPU-specialized dispatch.")
+          PY
       - name: Download and verify the trained RedAI MiniCPM5-1B Q4_K_M brain
         run: |
           set -euo pipefail
@@ -166,11 +250,11 @@ jobs:
           grep -Fq 'tts_voice_name' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'image-labeling' android-ui/app/build.gradle.kts
           ! grep -Fq 'android.permission.CAMERA' android-ui/app/src/main/AndroidManifest.xml
-          grep -Fq 'contextSize = 512L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'minimumFreeRamMb = 1408L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'Color(0xFF00B879)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          ! grep -Fq 'Color(0xFFE5092A)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -Fq 'android:fillColor="#00B879"' android-ui/app/src/main/res/drawable/ic_redai_launcher_foreground.xml
+          grep -Fq 'contextSize = 256L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'minimumFreeRamMb = 1280L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'Color(0xFFE5092A)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'Color(0xFFE5092A)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'android:fillColor="#E5092A"' android-ui/app/src/main/res/drawable/ic_redai_launcher_foreground.xml
           grep -Fq 'availableRamMb < minimumFreeRamMb' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'numThreads = 2' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'StatFs(dir.absolutePath).availableBytes' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
@@ -193,9 +277,9 @@ jobs:
           grep -Fq 'The bundled GGUF failed its SHA-256 or file-format check.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'redWaysOfThinkingPrompt(query)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "5.5.1"' android-ui/app/build.gradle.kts
-          grep -q 'versionCode = 21' android-ui/app/build.gradle.kts
-          grep -Fq 'SmolChatAndroidLib:V2.1' android-ui/app/build.gradle.kts
+          grep -q 'versionName = "5.6.0"' android-ui/app/build.gradle.kts
+          grep -q 'versionCode = 22' android-ui/app/build.gradle.kts
+          grep -Fq 'implementation(project(":smollm"))' android-ui/app/build.gradle.kts
           grep -q 'android:icon="@mipmap/ic_launcher"' android-ui/app/src/main/AndroidManifest.xml
           test -s android-ui/app/src/main/res/drawable/ic_redai_launcher.xml
           grep -q 'applicationId = "com.giggleloot.redai.v4"' android-ui/app/build.gradle.kts
