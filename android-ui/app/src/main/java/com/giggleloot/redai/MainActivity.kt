@@ -1,6 +1,7 @@
 package com.giggleloot.redai
 
 import android.content.Intent
+import android.app.ActivityManager
 import android.net.Uri
 import android.content.Context
 import android.graphics.Bitmap
@@ -63,6 +64,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import io.shubham0204.smollm.SmolLM
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,13 +83,16 @@ class MainActivity : ComponentActivity() {
     }
     private var pendingCameraUri: Uri? = null
     private var pendingCameraFile: File? = null
-    private val engine = SmolLM()
+    private var engine = SmolLM()
     private var modelFile: File? = null
-    private var modelReady = false
+    private var modelReady by mutableStateOf(false)
+    private var isLoadingModel by mutableStateOf(false)
+    private var statusText by mutableStateOf("Starting RedAI…")
+    private var uiCreated = false
+    private var generationJob: Job? = null
     private var webEnabled = true
     private var webProvider = "duckduckgo"
     private var isGenerating = false
-    private var isLoadingModel = false
     private var modelLoadRequested = false
     private var tts: TextToSpeech? = null
     private var selectedTtsVoiceName: String = "system"
@@ -123,6 +129,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun render(status: String? = null) {
+        if (!status.isNullOrBlank()) statusText = status
+        if (uiCreated) return
+        uiCreated = true
         setContent {
             RedAIApp(
                 onRetryModel = { modelLoadRequested = true; lifecycleScope.launch { autoLoadSavedModel() } },
@@ -141,7 +150,7 @@ class MainActivity : ComponentActivity() {
                 webEnabled = webEnabled,
                 webProvider = webProvider,
                 tavilyKeyConfigured = webSearch.hasTavilyKey(),
-                status = status,
+                status = statusText,
                 onWebChanged = { enabled ->
                     webEnabled = enabled
                     prefs.edit().putBoolean("web_enabled", enabled).apply()
@@ -676,10 +685,20 @@ class MainActivity : ComponentActivity() {
         isLoadingModel = true
         try {
             if (reset && modelReady) {
+                engine.stop()
                 withContext(Dispatchers.IO) { engine.close() }
+                engine = SmolLM()
                 modelReady = false
             }
-            render(if (reset) "Starting a fresh private conversation…" else "Loading the optimized local engine…")
+            render(if (reset) "Starting a fresh private conversation…" else "Checking phone memory and loading the local brain…")
+            val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val memoryInfo = ActivityManager.MemoryInfo()
+            manager.getMemoryInfo(memoryInfo)
+            if (memoryInfo.lowMemory || memoryInfo.availMem < 480L * 1024L * 1024L) {
+                throw IllegalStateException(
+                    "Android reports very low free memory (${memoryInfo.availMem / (1024L * 1024L)} MB). Close other apps, restart the phone if needed, then try loading RedAI again."
+                )
+            }
             val file = copyBundledModel()
             withContext(Dispatchers.IO) {
                 engine.load(
@@ -697,14 +716,15 @@ class MainActivity : ComponentActivity() {
                         chatTemplate = miniCpm5NoThinkTemplate()
                     )
                 )
+                engine.addSystemPrompt(baseSystemPrompt())
+                if (restoreHistory) restoreRecentConversation()
             }
-            engine.addSystemPrompt(baseSystemPrompt())
-            if (restoreHistory) restoreRecentConversation()
             modelFile = file
             modelReady = true
             render("LOCAL ENGINE READY • Your bundled model is running on this phone.")
         } catch (e: Throwable) {
-            runCatching { withContext(Dispatchers.IO) { engine.close() } }
+            runCatching { withContext(Dispatchers.IO) { engine.stop(); engine.close() } }
+            engine = SmolLM()
             modelReady = false
             val reason = when (e) {
                 is OutOfMemoryError -> "This phone ran out of available memory while loading the model. Close other apps and retry; the reduced-memory profile is now active."
@@ -737,14 +757,15 @@ class MainActivity : ComponentActivity() {
         Do not volunteer technical foundation-model names. If asked about the foundation model, explain that your underlying foundation model is the one represented by the GGUF file currently loaded; Red created and personalized RedAI, not the third-party model weights.
     """.trimIndent()
 
-    private fun restoreRecentConversation() {
+    private suspend fun restoreRecentConversation() {
         val history = getSharedPreferences("redai_chat_history", Context.MODE_PRIVATE)
         val saved = runCatching { JSONArray(history.getString("messages", "[]") ?: "[]") }.getOrNull() ?: return
         val recent = (0 until saved.length()).mapNotNull { index ->
             val item = saved.optJSONObject(index) ?: return@mapNotNull null
             val role = item.optString("role")
             val text = item.optString("text")
-            if (role in setOf("user", "assistant") && text.isNotBlank()) Message(role, text) else null
+            val savedContext = item.optString("context").takeIf { it.isNotBlank() }
+            if (role in setOf("user", "assistant") && text.isNotBlank()) Message(role, text, savedContext) else null
         }.takeLast(6)
         recent.forEach { message ->
             if (message.role == "user") engine.addUserMessage(message.context ?: message.text)
@@ -889,9 +910,9 @@ class MainActivity : ComponentActivity() {
         }
         isGenerating = true
 
-        lifecycleScope.launch {
+        generationJob = lifecycleScope.launch {
             try {
-                val query = userText.substringAfterLast("User's newest message: ", userText).trim().take(2400)
+                val query = userText.substringAfterLast("User's newest message: ", userText).trim().take(1600)
                 val searchRequested = allowSearch && needsFreshInfo(query)
                 val online = if (searchRequested && webEnabled) withContext(Dispatchers.IO) { networkAvailable() } else false
                 val searchResult = if (searchRequested && webEnabled && online) {
@@ -959,21 +980,32 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 callback(finalAnswer, true, engine.getResponseGenerationSpeed())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: OutOfMemoryError) {
+                engine.stop()
+                modelReady = false
+                render("Android ran out of memory during generation. Close background apps before loading the model again.")
+                callback("RedAI ran out of available memory while answering. Your saved chat remains on this phone.", true, 0f)
             } catch (e: Exception) {
                 callback("RedAI couldn't answer: " + (e.message ?: "unknown runtime error"), true, 0f)
             } finally {
                 isGenerating = false
+                generationJob = null
             }
         }
     }
 
     override fun onDestroy() {
+        generationJob?.cancel()
+        runCatching { engine.stop() }
         tts?.stop()
         tts?.shutdown()
-        runCatching { engine.close() }
+        // Do not free native model memory while a native load or generation call is still active.
+        if (modelReady && !isGenerating && !isLoadingModel) runCatching { engine.close() }
         modelReady = false
         super.onDestroy()
-    }
+}
 }
 
 @Composable
