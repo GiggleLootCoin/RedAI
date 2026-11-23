@@ -6,6 +6,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.provider.OpenableColumns
+import android.provider.MediaStore
+import androidx.core.content.FileProvider
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
@@ -75,6 +77,8 @@ class MainActivity : ComponentActivity() {
         if (granted) startVoiceInput()
         else render("Microphone permission was denied. Voice input remains off; typing still works.")
     }
+    private var pendingCameraUri: Uri? = null
+    private var pendingCameraFile: File? = null
     private val engine = SmolLM()
     private var modelFile: File? = null
     private var modelReady = false
@@ -113,6 +117,7 @@ class MainActivity : ComponentActivity() {
                 onSpeak = { text -> tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "redai") },
                 onVoice = { startVoiceInput() },
                 onAttach = { launchFilePicker() },
+                onCamera = { launchCameraCapture() },
                 isModelLoaded = modelReady,
                 modelName = null,
                 webEnabled = webEnabled,
@@ -210,6 +215,60 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun launchCameraCapture() {
+        val photo = File(cacheDir, "redai-camera-${System.currentTimeMillis()}.jpg")
+        val uri = runCatching {
+            FileProvider.getUriForFile(this, "${packageName}.fileprovider", photo)
+        }.getOrElse {
+            render("Could not prepare a private camera file: " + (it.message ?: "unknown error"))
+            return
+        }
+        pendingCameraUri = uri
+        pendingCameraFile = photo
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        if (intent.resolveActivity(packageManager) == null) {
+            pendingCameraUri = null
+            pendingCameraFile = null
+            photo.delete()
+            render("No compatible camera app is available on this device.")
+            return
+        }
+        runCatching { startActivityForResult(intent, 9004) }
+            .onFailure {
+                pendingCameraUri = null
+                pendingCameraFile = null
+                photo.delete()
+                render("Could not open the camera: " + (it.message ?: "unknown error"))
+            }
+    }
+
+    private fun analyseCameraCapture(uri: Uri, photo: File) {
+        lifecycleScope.launch {
+            try {
+                val extracted = extractImageText(uri).take(2400)
+                if (extracted.isBlank()) throw IllegalArgumentException("No readable labels or text were found in the photo.")
+                val displayPrompt = "Analyse the photo I just took"
+                val modelPrompt = buildString {
+                    append("Analyse this camera photo using the on-device object labels and OCR below. These are basic predictions, not full visual scene understanding. Do not invent details that are not supported by the labels or text.\\n\\n")
+                    append(extracted)
+                }
+                generate(modelPrompt, allowSearch = false) { answer, finished, speed ->
+                    if (finished) {
+                        appendHistoryExchange(displayPrompt, answer, modelPrompt)
+                        photo.delete()
+                        render(if (speed > 0f) "Camera photo analysed locally • ${String.format(Locale.US, "%.1f", speed)} tok/s" else "Camera photo analysed locally.")
+                    }
+                }
+            } catch (e: Exception) {
+                photo.delete()
+                render("Could not analyse the camera photo: " + (e.message ?: "unknown image error"))
+            }
+        }
+    }
+
     private fun startVoiceInput() {
         if (androidx.core.content.ContextCompat.checkSelfPermission(
                 this, android.Manifest.permission.RECORD_AUDIO
@@ -243,6 +302,19 @@ class MainActivity : ComponentActivity() {
                         render(if (speed > 0f) "Voice reply complete • ${String.format(Locale.US, "%.1f", speed)} tok/s" else "Voice reply complete.")
                     }
                 }
+            }
+            return
+        }
+        if (requestCode == 9004) {
+            val uri = pendingCameraUri
+            val photo = pendingCameraFile
+            pendingCameraUri = null
+            pendingCameraFile = null
+            if (resultCode == RESULT_OK && uri != null && photo != null && photo.isFile && photo.length() > 0L) {
+                analyseCameraCapture(uri, photo)
+            } else {
+                photo?.delete()
+                render("Camera capture was cancelled or returned an empty image.")
             }
             return
         }
@@ -852,6 +924,7 @@ fun RedAIApp(
     onSpeak: (String) -> Unit,
     onVoice: () -> Unit,
     onAttach: () -> Unit,
+    onCamera: () -> Unit,
     isModelLoaded: Boolean,
     modelName: String?,
     webEnabled: Boolean,
@@ -1444,19 +1517,26 @@ fun RedAIApp(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
+                    onClick = onCamera,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = redBright),
+                    border = BorderStroke(1.dp, red.copy(alpha = 0.65f))
+                ) { Text("CAMERA", fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp) }
+                OutlinedButton(
                     onClick = onAttach,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = white),
                     border = BorderStroke(1.dp, line)
-                ) { Text("ATTACH FILE", fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp) }
+                ) { Text("ATTACH", fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp) }
                 OutlinedButton(
                     onClick = onVoice,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = white),
                     border = BorderStroke(1.dp, line)
-                ) { Text("TALK", fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp) }
+                ) { Text("TALK", fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp) }
             }
 
             Row(
