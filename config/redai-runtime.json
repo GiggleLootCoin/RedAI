@@ -51,7 +51,7 @@
   "personalized_checkpoint": "RedAI MiniCPM5-1B fine-tuned candidate",
   "model_sha256": "eca3959621ebc7c4dc49f8f7bcdb015642e6c37d7f8a26dcd4d95d9072d40052",
   "model_size_bytes": 688065856,
-  "app_version": "5.2",
+  "app_version": "5.4",
   "attachments": {
     "text_files": true,
     "pdf_ocr_pages": 5,
@@ -59,7 +59,14 @@
     "visual_scene_understanding": false
   },
   "voice": {
-    "input": "Android system speech recognition tap-to-talk",
-    "output": "Android TextToSpeech"
+    "input": "Android system speech recognition tap-to-talk; no always-listening or independent offline recognizer",
+    "output": "Android TextToSpeech using installed English voices; custom cloned Red voice is not integrated"
+  },
+  "image_generation": {
+    "available": true,
+    "provider": "Stable Horde / AI Horde volunteer workers",
+    "on_device": false,
+    "requires_network": true,
+    "prompt_sent_to_external_provider": true
   }
 }
