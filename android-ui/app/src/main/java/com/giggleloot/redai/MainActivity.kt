@@ -689,9 +689,9 @@ class MainActivity : ComponentActivity() {
             val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             val memoryInfo = ActivityManager.MemoryInfo()
             manager.getMemoryInfo(memoryInfo)
-            if (memoryInfo.lowMemory || memoryInfo.availMem < 480L * 1024L * 1024L) {
+            if (memoryInfo.lowMemory || memoryInfo.availMem < 768L * 1024L * 1024L) {
                 throw IllegalStateException(
-                    "Android reports very low free memory (${memoryInfo.availMem / (1024L * 1024L)} MB). Close other apps, restart the phone if needed, then try loading RedAI again."
+                    "Android reports less than 768 MB of available RAM (${memoryInfo.availMem / (1024L * 1024L)} MB). To reduce native-engine crashes, RedAI has stopped before loading. Close background apps, restart the phone if needed, then try again."
                 )
             }
             val file = copyBundledModel()
@@ -724,7 +724,7 @@ class MainActivity : ComponentActivity() {
             engine = null
             modelReady = false
             val reason = when (e) {
-                is OutOfMemoryError -> "This phone ran out of available memory while loading the model. Close other apps and retry; the reduced-memory profile is now active."
+                is OutOfMemoryError -> "The phone ran out of available memory while loading the model. The local engine was unloaded safely. Close background apps and retry."
                 else -> e.message ?: e.javaClass.simpleName
             }
             render("RedAI could not prepare its local engine: " + reason)
