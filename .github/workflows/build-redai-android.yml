@@ -178,10 +178,10 @@ jobs:
           grep -Fq 'temporary = File(dir, "RedAI.gguf.part")' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'The bundled GGUF failed its SHA-256 or file-format check.' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'redWaysOfThinkingPrompt(query)' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          ! grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
-          grep -q 'versionName = "5.1"' android-ui/app/build.gradle.kts
+          grep -Fq 'LOAD REDAI GGUF' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -q 'versionName = "5.2"' android-ui/app/build.gradle.kts
           grep -Fq 'SmolChatAndroidLib:V2.1' android-ui/app/build.gradle.kts
-          grep -q '@drawable/ic_redai_launcher' android-ui/app/src/main/AndroidManifest.xml
+          grep -q 'android:icon="@mipmap/ic_launcher"' android-ui/app/src/main/AndroidManifest.xml
           test -s android-ui/app/src/main/res/drawable/ic_redai_launcher.xml
           grep -q 'applicationId = "com.giggleloot.redai.v4"' android-ui/app/build.gradle.kts
           python3 - <<'PY'
