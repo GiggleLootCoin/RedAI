@@ -1235,7 +1235,7 @@ fun RedAIApp(
                         border = BorderStroke(1.dp, if (isModelLoaded) Color(0xFF28C98A) else Color(0x77FF3B4F))
                     ) {
                         Text(
-                            if (isModelLoaded) "ONLINE" else "READY",
+                            if (isModelLoaded) "LOCAL" else "READY",
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                             color = if (isModelLoaded) Color(0xFF6DE2B0) else Color(0xFFFF8996),
                             fontWeight = FontWeight.Black,
