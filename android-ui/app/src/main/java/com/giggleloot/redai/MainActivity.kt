@@ -689,9 +689,14 @@ class MainActivity : ComponentActivity() {
             val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             val memoryInfo = ActivityManager.MemoryInfo()
             manager.getMemoryInfo(memoryInfo)
-            if (memoryInfo.lowMemory || memoryInfo.availMem < 768L * 1024L * 1024L) {
+            // The bundled 1B GGUF and native runtime need a substantially larger
+            // safety margin than the old 768 MB gate. Native OOM/SIGSEGV can
+            // terminate the process before Kotlin can catch an exception.
+            val minimumFreeRamMb = 1408L
+            val availableRamMb = memoryInfo.availMem / (1024L * 1024L)
+            if (memoryInfo.lowMemory || availableRamMb < minimumFreeRamMb) {
                 throw IllegalStateException(
-                    "Android reports less than 768 MB of available RAM (${memoryInfo.availMem / (1024L * 1024L)} MB). To reduce native-engine crashes, RedAI has stopped before loading. Close background apps, restart the phone if needed, then try again."
+                    "RedAI has paused model loading to protect your phone. Available RAM: ${availableRamMb} MB; required safety margin: ${minimumFreeRamMb} MB. Close background apps and retry after memory is available."
                 )
             }
             val file = copyBundledModel()
@@ -700,7 +705,7 @@ class MainActivity : ComponentActivity() {
                 activeEngine.load(
                     modelPath = file.absolutePath,
                     params = SmolLM.InferenceParams(
-                        contextSize = 512L,
+                        contextSize = 256L,
                         numThreads = 2,
                         temperature = 0.70f,
                         topP = 0.95f,
@@ -1020,7 +1025,7 @@ private fun RedAICoreOrb(modifier: Modifier = Modifier) {
         val radius = size.minDimension * 0.43f
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(Color(0xFFFFD7DC), Color(0xFFFF5368), Color(0xFFB90028), Color(0xFF30030D), Color(0xFF09090C)),
+                colors = listOf(Color(0xFFD8FFEC), Color(0xFF42E5A3), Color(0xFF00865B), Color(0xFF06291D), Color(0xFF090D0B)),
                 center = Offset(c.x - radius * 0.24f, c.y - radius * 0.28f),
                 radius = radius * 1.55f
             ),
@@ -1028,7 +1033,7 @@ private fun RedAICoreOrb(modifier: Modifier = Modifier) {
             center = c
         )
         drawCircle(
-            color = Color(0x99FF7182),
+            color = Color(0x9975F4BD),
             radius = radius * 1.12f,
             center = c,
             style = Stroke(width = size.minDimension * 0.025f)
@@ -1040,7 +1045,7 @@ private fun RedAICoreOrb(modifier: Modifier = Modifier) {
             style = Stroke(width = size.minDimension * 0.012f)
         )
         drawArc(
-            color = Color(0xFFFFB8C0),
+            color = Color(0xFFB9FFE0),
             startAngle = -118f,
             sweepAngle = 238f,
             useCenter = false,
@@ -1141,13 +1146,13 @@ fun RedAIApp(
     }
 
     val black = Color(0xFF020203)
-    val panel = Color(0xFF09090C)
+    val panel = Color(0xFF090D0B)
     val panelRaised = Color(0xFF101015)
-    val red = Color(0xFFE10B20)
-    val redBright = Color(0xFFFF3B4F)
+    val red = Color(0xFF00A86B)
+    val redBright = Color(0xFF32E6A0)
     val white = Color(0xFFF8F8FA)
     val muted = Color(0xFFA6A6AE)
-    val line = Color(0xFF26262D)
+    val line = Color(0xFF24352D)
 
     MaterialTheme(
         colorScheme = darkColorScheme(
@@ -1167,7 +1172,7 @@ fun RedAIApp(
                 .fillMaxSize()
                 .background(
                     androidx.compose.ui.graphics.Brush.verticalGradient(
-                        listOf(Color(0xFF17060A), Color(0xFF08080B), Color(0xFF020203))
+                        listOf(Color(0xFF071B13), Color(0xFF050B08), Color(0xFF020203))
                     )
                 )
         ) {
@@ -1175,12 +1180,12 @@ fun RedAIApp(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp),
                 shape = RoundedCornerShape(26.dp),
                 color = panel,
-                border = BorderStroke(1.dp, Color(0x66FF3B4F)),
+                border = BorderStroke(1.dp, Color(0x6632E6A0)),
                 shadowElevation = 16.dp
             ) {
                 Row(
                     modifier = Modifier
-                        .background(Brush.linearGradient(listOf(Color(0xFF3A0712), Color(0xFF16080D), Color(0xFF09090C))))
+                        .background(Brush.linearGradient(listOf(Color(0xFF123D2A), Color(0xFF0B2418), Color(0xFF090D0B))))
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1197,7 +1202,7 @@ fun RedAIApp(
                         )
                         Text(
                             "CREATED WITH LOVE BY LittleRedBigSmile",
-                            color = Color(0xFFFF7182),
+                            color = Color(0xFF75F4BD),
                             fontWeight = FontWeight.ExtraBold,
                             style = MaterialTheme.typography.labelSmall,
                             letterSpacing = 0.15.sp
@@ -1212,13 +1217,13 @@ fun RedAIApp(
                     }
                     Surface(
                         shape = RoundedCornerShape(50),
-                        color = if (isModelLoaded) Color(0x3328C98A) else Color(0x22FF3B4F),
-                        border = BorderStroke(1.dp, if (isModelLoaded) Color(0xFF28C98A) else Color(0x77FF3B4F))
+                        color = if (isModelLoaded) Color(0x3328C98A) else Color(0x2200B879),
+                        border = BorderStroke(1.dp, if (isModelLoaded) Color(0xFF35D69B) else Color(0x7735D69B))
                     ) {
                         Text(
                             if (isModelLoaded) "LOCAL" else "READY",
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                            color = if (isModelLoaded) Color(0xFF6DE2B0) else Color(0xFFFF8996),
+                            color = if (isModelLoaded) Color(0xFF6DE2B0) else Color(0xFF75F4BD),
                             fontWeight = FontWeight.Black,
                             style = MaterialTheme.typography.labelSmall
                         )
@@ -1231,17 +1236,17 @@ fun RedAIApp(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = panel),
-                    border = BorderStroke(1.dp, Color(0x77FF3B4F)),
+                    border = BorderStroke(1.dp, Color(0x7735D69B)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
                 ) {
                     Column(
                         Modifier
-                            .background(Brush.linearGradient(listOf(Color(0xFF240811), Color(0xFF111116), Color(0xFF09090C))))
+                            .background(Brush.linearGradient(listOf(Color(0xFF0D3021), Color(0xFF101712), Color(0xFF090D0B))))
                             .padding(20.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("YOUR PRIVATE AI CORE", color = Color(0xFFFF7182), fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                                Text("YOUR PRIVATE AI CORE", color = Color(0xFF75F4BD), fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
                                 Spacer(Modifier.height(8.dp))
                                 Text("Built to think.\nMade to create.", color = white, fontWeight = FontWeight.Black, fontSize = 25.sp, lineHeight = 29.sp)
                                 Spacer(Modifier.height(7.dp))
@@ -1277,7 +1282,7 @@ fun RedAIApp(
                             Text(if (status?.contains("Loading", true) == true) "PREPARING REDAI…" else "LOAD REDAI • START CREATING", fontWeight = FontWeight.Black, letterSpacing = 0.35.sp)
                         }
                         Spacer(Modifier.height(8.dp))
-                        Text("Designed for low-memory Android • Model loads only when you choose", color = muted, style = MaterialTheme.typography.labelSmall)
+                        Text("LOCAL MODEL • Protected loading • Chats stay on this phone", color = muted, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             } else {
@@ -1500,7 +1505,7 @@ fun RedAIApp(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            border = BorderStroke(1.dp, Color(0x99FF3B4F)),
+                            border = BorderStroke(1.dp, Color(0x9935D69B)),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = redBright)
                         ) {
                             Text("COPY CRASH & DEVICE DIAGNOSTICS", fontWeight = FontWeight.Black, letterSpacing = 0.2.sp)
@@ -1650,16 +1655,16 @@ fun RedAIApp(
                                 bottomStart = if (isUser) 20.dp else 6.dp,
                                 bottomEnd = if (isUser) 6.dp else 20.dp
                             ),
-                            color = if (isUser) Color(0xFF2B0B15) else Color(0xFF101116),
+                            color = if (isUser) Color(0xFF0D3021) else Color(0xFF101712),
                             border = BorderStroke(
                                 1.dp,
-                                if (isUser) Color(0x99FF3B58) else Color(0xFF292A33)
+                                if (isUser) Color(0x9935D69B) else Color(0xFF29352E)
                             ),
                             shadowElevation = if (isUser) 8.dp else 4.dp
                         ) {
                             Column(
                                 Modifier
-                                    .background(Brush.linearGradient(if (isUser) listOf(Color(0xFF3A0B1A), Color(0xFF1B0A12)) else listOf(Color(0xFF1A1B22), Color(0xFF0C0D12))))
+                                    .background(Brush.linearGradient(if (isUser) listOf(Color(0xFF103D2A), Color(0xFF0D2419)) else listOf(Color(0xFF1A241E), Color(0xFF0C120E))))
                                     .padding(horizontal = 15.dp, vertical = 12.dp)
                             ) {
                                 Text(
@@ -1761,7 +1766,7 @@ fun RedAIApp(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Brush.horizontalGradient(listOf(Color(0xFF18070D), Color(0xFF0C0D12), Color(0xFF18070D))))
+                    .background(Brush.horizontalGradient(listOf(Color(0xFF0B2418), Color(0xFF0C120E), Color(0xFF0B2418))))
                     .padding(10.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
