@@ -159,6 +159,9 @@ jobs:
           ! grep -Fq 'android.permission.CAMERA' android-ui/app/src/main/AndroidManifest.xml
           grep -Fq 'contextSize = 512L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'numThreads = 2' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'modelLoadRequested = true' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'startup stays lightweight' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          ! grep -Fq 'lifecycleScope.launch { autoLoadSavedModel() }' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'android:icon="@mipmap/ic_launcher"' android-ui/app/src/main/AndroidManifest.xml
           test -s android-ui/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           test -s android-ui/app/src/main/res/drawable/ic_redai_launcher_foreground.xml
