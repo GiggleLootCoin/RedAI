@@ -7,8 +7,8 @@ RedAI is an Android AI app created and personalized by **Red (LittleRedBigSmile)
 - Foundation: MiniCPM5-1B Q4_K_M GGUF, bundled by the GitHub Actions build.
 - Personalization: RedAI fine-tuned candidate plus Red's Ways Of Thinking framework.
 - Runtime: SmolChatAndroidLib V2.1 / llama.cpp, ARM64 CPU runtime, streamed output.
-- Runtime profile: 256-token context, 2 CPU threads, temperature 0.70, top-p 0.95, top-k 40, repeat penalty 1.08.
-- Model load is user-initiated and now requires at least 1,408 MB of available system RAM before native loading; inference context is capped at 256 tokens to reduce memory pressure.
+- Runtime profile: 512-token context, 2 CPU threads, temperature 0.70, top-p 0.95, top-k 40, repeat penalty 1.08.
+- Model load is user-initiated and now requires at least 1,408 MB of available system RAM before native loading; inference context is capped at 512 tokens to reduce memory pressure.
 - Up to 30 local conversation sessions, with switching and deletion.
 - Optional DuckDuckGo/Wikipedia search and optional Tavily search.
 - Local text-file reading, PDF text extraction (up to five pages), and image OCR.
