@@ -152,6 +152,9 @@ jobs:
           grep -Fq 'SAVED CHATS' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'CREATE A CHARACTER PROFILE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           grep -Fq 'USER-CREATED CHARACTER PROFILE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'availableOfflineEnglishVoices' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'NEXT VOICE' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
+          grep -Fq 'tts_voice_name' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
           ! grep -Fq 'image-labeling' android-ui/app/build.gradle.kts
           ! grep -Fq 'android.permission.CAMERA' android-ui/app/src/main/AndroidManifest.xml
           grep -Fq 'contextSize = 1536L' android-ui/app/src/main/java/com/giggleloot/redai/MainActivity.kt
